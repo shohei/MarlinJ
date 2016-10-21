@@ -35,6 +35,8 @@
 
 #include "MarlinConfig.h"
 
+#include "Preference.h"
+
 #include "enum.h"
 #include "types.h"
 #include "fastio.h"

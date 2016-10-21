@@ -985,6 +985,11 @@ void setup() {
       for (uint8_t i = 0; i < MIXING_STEPPERS; i++)
         mixing_virtual_tool_mix[t][i] = mixing_factor[i];
   #endif
+
+  Preference *pref = Preference::getInstance();
+  pref->extruded_width = EXTRUDED_WIDTH;
+  pref->extruded_height = EXTRUDED_HEIGHT;
+  pref->density = DENSITY;
 }
 
 /**
@@ -7691,21 +7696,35 @@ ExitUnknownCommand:
   ok_to_send();
 }
 
-
 void stop_screw(){
   Serial3.println("SNW,0");
 }
 
 void get_density(){
-
+    if (code_seen('S')) {
+      Preference *pref = Preference::getInstance();
+      pref->density = code_value_float();
+      SERIAL_ECHOPGM("density updated: ");
+      SERIAL_ECHOLN(pref->density);
+    }
 }
 
 void get_extruded_width(){
-
+    if (code_seen('S')) {
+      Preference *pref = Preference::getInstance();
+      pref->extruded_width = code_value_float();
+      SERIAL_ECHOPGM("extruded_width updated: ");
+      SERIAL_ECHOLN(pref->extruded_width);
+    }
 }
 
 void get_extruded_height(){
-
+    if (code_seen('S')) {
+      Preference *pref = Preference::getInstance();
+      pref->extruded_height = code_value_float();
+      SERIAL_ECHOPGM("extruded_height updated: ");
+      SERIAL_ECHOLN(pref->extruded_height);
+    }
 }
 
 void FlushSerialRequestResend() {

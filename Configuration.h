@@ -59,9 +59,14 @@
 // #define OPMODE USE_E
 // #define OPMODE USE_F_E 
 // #define OPMODE USE_F_E_DIV
+
 #define ALPHA 1
 #define FREEZE_TIME 30
 #define UNDER_LIMIT 5
+
+#define DENSITY 1.0
+#define EXTRUDED_WIDTH 1.0
+#define EXTRUDED_HEIGHT 1.0
  
 /**
  *

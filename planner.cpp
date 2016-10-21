@@ -1187,7 +1187,14 @@ void Planner::check_axes_activity() {
   float snw; 
   switch(OPMODE){
     case USE_F:
-      snw = ALPHA * fr_mm_s; 
+      // snw = ALPHA * fr_mm_s; 
+      Preference *pref;
+      float density,extruded_width,extruded_height;
+      pref = Preference::getInstance();
+      density  = pref->density;
+      extruded_width = pref->extruded_width;
+      extruded_height = pref->extruded_height;
+      snw = ALPHA * DENSITY * EXTRUDED_WIDTH * EXTRUDED_HEIGHT * fr_mm_s;
       break;
     case USE_E:
       snw = ALPHA * de;
@@ -1218,14 +1225,14 @@ void Planner::check_axes_activity() {
            Serial3.print("SNW,");
            Serial3.println(snw,1);
            SERIAL_ECHOLNPGM("1");
-           freeze(1000);
+           freeze(200);
         }
       } else if(de==0 && previous_de >0) {
          Serial3.print("SNW,");
          Serial3.println(0);
          SERIAL_ECHOLNPGM("0");
          screw_stopped = true;
-         freeze(1000);
+         freeze(200);
        }
    }
 
