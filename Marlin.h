@@ -217,6 +217,11 @@ void manage_inactivity(bool ignore_stepper_queue = false);
  */
 #define _AXIS(AXIS) AXIS ##_AXIS
 
+void stop_screw(); 
+void get_density();
+void get_extruded_width();
+void get_extruded_height();
+
 void enable_all_steppers();
 void disable_all_steppers();
 

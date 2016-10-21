@@ -405,6 +405,7 @@
   // Make delta curves from many straight lines (linear interpolation).
   // This is a trade-off between visible corners (not enough segments)
   // and processor overload (too many expensive sqrt calls).
+  // #define DELTA_SEGMENTS_PER_SECOND 20
   #define DELTA_SEGMENTS_PER_SECOND 20
   // #define DELTA_SEGMENTS_PER_SECOND 20
 
@@ -712,7 +713,7 @@
 #define Y_HOME_DIR 1
 #define Z_HOME_DIR 1
 
-#define min_software_endstops true// If true, axis won't move to coordinates less than HOME_POS.
+#define min_software_endstops false// If true, axis won't move to coordinates less than HOME_POS.
 #define max_software_endstops true  // If true, axis won't move to coordinates greater than the defined lengths below.
 
 // @section machine
@@ -841,7 +842,8 @@
 // #define MANUAL_Z_HOME_POS 480 // Distance between the nozzle to printbed after homing
 // #define MANUAL_Z_HOME_POS 180// Distance between the nozzle to printbed after homing
 // #define MANUAL_Z_HOME_POS 300 // Distance between the nozzle to printbed after homing
-#define MANUAL_Z_HOME_POS 365 // Distance between the nozzle to printbed after homing
+// #define MANUAL_Z_HOME_POS 365 // Distance between the nozzle to printbed after homing
+#define MANUAL_Z_HOME_POS 372.3// Distance between the nozzle to printbed after homing
 
 // Use "Z Safe Homing" to avoid homing with a Z probe outside the bed area.
 //

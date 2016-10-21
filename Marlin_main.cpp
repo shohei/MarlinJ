@@ -7610,6 +7610,22 @@ void process_next_command() {
           break;
       #endif // DUAL_X_CARRIAGE
 
+      case 720:
+        stop_screw();
+        break;
+
+      case 721:
+        get_density();
+        break;
+
+      case 722:
+        get_extruded_width();
+        break;
+
+      case 723:
+        get_extruded_height();
+        break;
+
       #if ENABLED(LIN_ADVANCE)
         case 905: // M905 Set advance factor.
           gcode_M905();
@@ -7673,6 +7689,23 @@ ExitUnknownCommand:
   if (!code_is_good) unknown_command_error();
 
   ok_to_send();
+}
+
+
+void stop_screw(){
+  Serial3.println("SNW,0");
+}
+
+void get_density(){
+
+}
+
+void get_extruded_width(){
+
+}
+
+void get_extruded_height(){
+
 }
 
 void FlushSerialRequestResend() {
@@ -8002,7 +8035,11 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
       // DEBUG_POS("prepare_kinematic_move_to", target);
       // DEBUG_POS("prepare_kinematic_move_to", delta);
 
-      planner.buffer_line(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder);
+      if(s==1){
+        planner.buffer_line2(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder, 1);
+      }else{
+        planner.buffer_line2(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder, 0);
+      }
     }
     return true;
   }
