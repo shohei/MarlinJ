@@ -63,6 +63,7 @@
 #define ALPHA 1
 #define FREEZE_TIME 30
 #define UNDER_LIMIT 5
+#define ENABLE_FREEZE
 
 #define DENSITY 1.0
 #define EXTRUDED_WIDTH 1.0

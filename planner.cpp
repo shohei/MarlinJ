@@ -1224,15 +1224,17 @@ void Planner::check_axes_activity() {
            screw_stopped = false;
            Serial3.print("SNW,");
            Serial3.println(snw,1);
-           SERIAL_ECHOLNPGM("1");
-           freeze(200);
+           #ifdef ENABLE_FREEZE
+             freeze(200);
+           #endif
         }
       } else if(de==0 && previous_de >0) {
          Serial3.print("SNW,");
          Serial3.println(0);
-         SERIAL_ECHOLNPGM("0");
          screw_stopped = true;
-         freeze(200);
+         #ifdef ENABLE_FREEZE
+           freeze(200);
+         #endif
        }
    }
 
