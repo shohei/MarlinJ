@@ -1145,9 +1145,9 @@ void Planner::check_axes_activity() {
 
 
 #if ENABLED(AUTO_BED_LEVELING_FEATURE) || ENABLED(MESH_BED_LEVELING)
-  void Planner::buffer_line2(float x, float y, float z, const float& e, float fr_mm_s, const uint8_t extruder, int isFirstLoop)
+  void Planner::buffer_line2(float x, float y, float z, const float& e, float fr_mm_s, const uint8_t extruder, int isFirstLoop, float fraction_time, bool do_extrude)
 #else
-  void Planner::buffer_line2(const float& x, const float& y, const float& z, const float& e, float fr_mm_s, const uint8_t extruder, int isFirstLoop)
+  void Planner::buffer_line2(const float& x, const float& y, const float& z, const float& e, float fr_mm_s, const uint8_t extruder, int isFirstLoop, float fraction_time, bool do_extrude)
 #endif  // AUTO_BED_LEVELING_FEATURE
 {
   // Calculate the buffer head after we push this byte
@@ -1216,7 +1216,7 @@ void Planner::check_axes_activity() {
     } 
 
     if(isFirstLoop==1){
-      if(de>0){
+      if(do_extrude){
         if (screw_stopped==false && fabs(previous_snw - snw)>1) {
            Serial3.print("SNW,");
            Serial3.println(snw,1);
@@ -1229,11 +1229,11 @@ void Planner::check_axes_activity() {
              freeze(1000);
            #endif
         }
-      } else if(de==0 && previous_de >0) {
+      } else {
          Serial3.print("SNW,");
          Serial3.println(0);
          screw_stopped = true;
-       }
+       } 
    }
 
    previous_snw = snw;
@@ -1524,7 +1524,8 @@ void Planner::check_axes_activity() {
   float inverse_millimeters = 1.0 / block->millimeters;  // Inverse millimeters to remove multiple divides
 
   // Calculate moves/second for this move. No divide by zero due to previous checks.
-  float inverse_mm_s = fr_mm_s * inverse_millimeters;
+  // float inverse_mm_s = fr_mm_s * inverse_millimeters;
+  float inverse_mm_s = 1.0 / fraction_time;
 
   int moves_queued = movesplanned();
 

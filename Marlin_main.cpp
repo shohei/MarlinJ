@@ -287,6 +287,7 @@ float current_position[NUM_AXIS] = { 0.0 };
 static float destination[NUM_AXIS] = { 0.0 };
 bool axis_known_position[3] = { false };
 bool axis_homed[3] = { false };
+bool do_extrude = false;;
 
 static long gcode_N, gcode_LastN, Stopped_gcode_LastN = 0;
 
@@ -2593,6 +2594,12 @@ static void homeaxis(AxisEnum axis) {
  *  - Set the feedrate, if included
  */
 void gcode_get_destination() {
+  if (code_seen('E')){
+    do_extrude = true;
+  } else {
+    do_extrude = false;
+  }
+
   LOOP_XYZE(i) {
     if (code_seen(axis_codes[i]))
       destination[i] = code_value_axis_units(i) + (axis_relative_modes[i] || relative_mode ? current_position[i] : 0);
@@ -8034,6 +8041,7 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
     int steps = max(1, int(delta_segments_per_second * seconds));
     float inv_steps = 1.0/steps;
 
+    float fraction_time = seconds/steps;
     // SERIAL_ECHOPGM("mm="); SERIAL_ECHO(cartesian_mm);
     // SERIAL_ECHOPGM(" seconds="); SERIAL_ECHO(seconds);
     SERIAL_ECHOPGM(" steps="); SERIAL_ECHOLN(steps);
@@ -8055,9 +8063,9 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
       // DEBUG_POS("prepare_kinematic_move_to", delta);
 
       if(s==1){
-        planner.buffer_line2(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder, 1);
+        planner.buffer_line2(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder, 1, fraction_time, do_extrude);
       }else{
-        planner.buffer_line2(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder, 0);
+        planner.buffer_line2(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder, 0, fraction_time, do_extrude) ;
       }
     }
     return true;
