@@ -1224,17 +1224,15 @@ void Planner::check_axes_activity() {
            screw_stopped = false;
            Serial3.print("SNW,");
            Serial3.println(snw,1);
+           delay(30); //make sure to finish serial communication
            #ifdef ENABLE_FREEZE
-             freeze(200);
+             freeze(1000);
            #endif
         }
       } else if(de==0 && previous_de >0) {
          Serial3.print("SNW,");
          Serial3.println(0);
          screw_stopped = true;
-         #ifdef ENABLE_FREEZE
-           freeze(200);
-         #endif
        }
    }
 
