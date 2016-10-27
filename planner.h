@@ -39,6 +39,7 @@
   #include "vector_3.h"
 #endif
 
+//77 nop : this is wrong, since calculated from 84MHz frequency, of Arduino "DUE"
 #define _DELAY_1_US __asm__ __volatile__ ("nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t" "nop\n\t");
 
 class Planner;
@@ -235,7 +236,7 @@ class Planner {
     #else
 
       static void buffer_line(const float& x, const float& y, const float& z, const float& e, float fr_mm_s, const uint8_t extruder );
-      static void buffer_line2(const float& x, const float& y, const float& z, const float& e, float fr_mm_s, const uint8_t extruder, int isFirstLoop);
+      static void buffer_line2(const float& x, const float& y, const float& z, const float& e, float fr_mm_s, const uint8_t extruder, int isFirstLoop, float fraction_time);
       static void set_position_mm(const float& x, const float& y, const float& z, const float& e);
 
     #endif // AUTO_BED_LEVELING_FEATURE || MESH_BED_LEVELING

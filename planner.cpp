@@ -164,6 +164,12 @@ Planner::Planner() { init(); }
 void Planner::init() {
   block_buffer_head = block_buffer_tail = 0;
   memset(position, 0, sizeof(position)); // clear position
+  
+    // SERIAL_ECHOPGM("Planner::init()");
+    // SERIAL_ECHOPGM("position[X_AXIS]");SERIAL_ECHOLN(position[X_AXIS]);
+    // SERIAL_ECHOPGM("position[Y_AXIS]");SERIAL_ECHOLN(position[Y_AXIS]);
+    // SERIAL_ECHOPGM("position[Z_AXIS]");SERIAL_ECHOLN(position[Z_AXIS]);
+
   LOOP_XYZE(i) previous_speed[i] = 0.0;
   long previous_de;
   previous_nominal_speed = 0.0;
@@ -179,7 +185,8 @@ void Planner::init() {
 void Planner::calculate_trapezoid_for_block(block_t* block, float entry_factor, float exit_factor) {
   unsigned long initial_rate = ceil(block->nominal_rate * entry_factor),
                 final_rate = ceil(block->nominal_rate * exit_factor); // (steps per second)
-
+                //final_rateが速すぎる
+  // SERIAL_ECHOPGM("final_rate(=>728???) ");SERIAL_ECHOLN(final_rate);
   // Limit minimal step rate (Otherwise the timer will overflow.)
   NOLESS(initial_rate, 120);
   NOLESS(final_rate, 120);
@@ -213,6 +220,7 @@ void Planner::calculate_trapezoid_for_block(block_t* block, float entry_factor, 
     block->accelerate_until = accelerate_steps;
     block->decelerate_after = accelerate_steps + plateau_steps;
     block->initial_rate = initial_rate;
+    //final_rate should be more than 32: minimum step rate
     block->final_rate = final_rate;
     #if ENABLED(ADVANCE)
       block->initial_advance = initial_advance;
@@ -890,6 +898,12 @@ void Planner::check_axes_activity() {
 
   block->nominal_speed = block->millimeters * inverse_mm_s; // (mm/sec) Always > 0
   block->nominal_rate = ceil(block->step_event_count * inverse_mm_s); // (step/sec) Always > 0
+  SERIAL_ECHOPGM("delta_mm[X_AXIS]: ");SERIAL_ECHOLN(delta_mm[X_AXIS]);
+  SERIAL_ECHOPGM("delta_mm[Y_AXIS]: ");SERIAL_ECHOLN(delta_mm[X_AXIS]);
+  SERIAL_ECHOPGM("delta_mm[Z_AXIS]: ");SERIAL_ECHOLN(delta_mm[X_AXIS]);
+  SERIAL_ECHOPGM("block->nominal_rate: ");SERIAL_ECHOLN(block->nominal_rate);
+  SERIAL_ECHOPGM("seconds[sec]"); SERIAL_ECHOLN(delta_mm[X_AXIS]/block->nominal_rate);
+
 
   #if ENABLED(FILAMENT_WIDTH_SENSOR)
     static float filwidth_e_count = 0, filwidth_delay_dist = 0;
@@ -1147,7 +1161,7 @@ void Planner::check_axes_activity() {
 #if ENABLED(AUTO_BED_LEVELING_FEATURE) || ENABLED(MESH_BED_LEVELING)
   void Planner::buffer_line2(float x, float y, float z, const float& e, float fr_mm_s, const uint8_t extruder, int isFirstLoop)
 #else
-  void Planner::buffer_line2(const float& x, const float& y, const float& z, const float& e, float fr_mm_s, const uint8_t extruder, int isFirstLoop)
+  void Planner::buffer_line2(const float& x, const float& y, const float& z, const float& e, float fr_mm_s, const uint8_t extruder, int isFirstLoop, float fraction_time)
 #endif  // AUTO_BED_LEVELING_FEATURE
 {
   // Calculate the buffer head after we push this byte
@@ -1164,6 +1178,7 @@ void Planner::check_axes_activity() {
     apply_rotation_xyz(bed_level_matrix, x, y, z);
   #endif
 
+
   // The target position of the tool in absolute steps
   // Calculate target position in absolute steps
   //this should be done after the wait, because otherwise a M92 code within the gcode disrupts this calculation somehow
@@ -1178,6 +1193,12 @@ void Planner::check_axes_activity() {
        dy = target[Y_AXIS] - position[Y_AXIS],
        dz = target[Z_AXIS] - position[Z_AXIS];
 
+    // SERIAL_ECHOPGM("target[X_AXIS]");SERIAL_ECHOLN(target[X_AXIS]);
+    // SERIAL_ECHOPGM("target[Y_AXIS]");SERIAL_ECHOLN(target[Y_AXIS]);
+    // SERIAL_ECHOPGM("target[Z_AXIS]");SERIAL_ECHOLN(target[Z_AXIS]);
+    // SERIAL_ECHOPGM("position[X_AXIS]");SERIAL_ECHOLN(position[X_AXIS]);
+    // SERIAL_ECHOPGM("position[Y_AXIS]");SERIAL_ECHOLN(position[Y_AXIS]);
+    // SERIAL_ECHOPGM("position[Z_AXIS]");SERIAL_ECHOLN(position[Z_AXIS]);
   // DRYRUN ignores all temperature constraints and assures that the extruder is instantly satisfied
   if (DEBUGGING(DRYRUN))
     position[E_AXIS] = target[E_AXIS];
@@ -1526,6 +1547,7 @@ void Planner::check_axes_activity() {
   float inverse_millimeters = 1.0 / block->millimeters;  // Inverse millimeters to remove multiple divides
 
   // Calculate moves/second for this move. No divide by zero due to previous checks.
+
   float inverse_mm_s = fr_mm_s * inverse_millimeters;
 
   int moves_queued = movesplanned();
@@ -1552,7 +1574,11 @@ void Planner::check_axes_activity() {
   #endif
 
   block->nominal_speed = block->millimeters * inverse_mm_s; // (mm/sec) Always > 0
-  block->nominal_rate = ceil(block->step_event_count * inverse_mm_s); // (step/sec) Always > 0
+  // block->nominal_rate = ceil(block->step_event_count * inverse_mm_s); // (step/sec) Always > 0//変更する
+  block->nominal_rate = ceil(block->step_event_count / fraction_time); // (step/sec) Always > 0
+  //nominal_rate 速すぎる
+  // SERIAL_ECHOPGM("nominal_rate->728?? ");SERIAL_ECHOLN(block->nominal_rate);
+
 
   #if ENABLED(FILAMENT_WIDTH_SENSOR)
     static float filwidth_e_count = 0, filwidth_delay_dist = 0;
@@ -1588,6 +1614,8 @@ void Planner::check_axes_activity() {
     }
   #endif
 
+  //この時点でおかしい。6sかかるところを、3.3sで計算することになっている。 -> inverse_mm_sがおかしい
+  //speed_factorは1.0で問題ない。
   // Calculate and limit speed in mm/sec for each axis
   float current_speed[NUM_AXIS];
   float speed_factor = 1.0; //factor <=1 do decrease speed
@@ -1596,6 +1624,42 @@ void Planner::check_axes_activity() {
     float cs = fabs(current_speed[i]), mf = max_feedrate_mm_s[i];
     if (cs > mf) speed_factor = min(speed_factor, mf / cs);
   }
+
+  //DEBUG PRINT
+// Preference *pref = Preference::getInstance();                
+// if(pref->counter % 20==0){
+//   LOOP_XYZE(i) {
+//     SERIAL_ECHOPGM("delta_mm[i]: ");SERIAL_ECHOLN(delta_mm[i]);
+//     SERIAL_ECHOPGM("steps_to_mm[i]: ");SERIAL_ECHOLN(steps_to_mm[i]);
+
+//   //   SERIAL_ECHOPGM("current_speed[i]: ");SERIAL_ECHOLN(current_speed[i]);
+//   }
+//   SERIAL_ECHOPGM("block->millimeters: ");SERIAL_ECHOLN(block->millimeters);
+
+//   SERIAL_ECHOPGM("inverse_millimeters: ");SERIAL_ECHOLN(inverse_millimeters);
+//   SERIAL_ECHOPGM("fr_mm_s: ");SERIAL_ECHOLN(fr_mm_s);
+//   SERIAL_ECHOPGM("inverse_mm_s: ");SERIAL_ECHOLN(inverse_mm_s);
+
+//   SERIAL_ECHOPGM("axis_steps_per_mm[X_AXIS]: ");SERIAL_ECHOLN(axis_steps_per_mm[X_AXIS]);
+//   SERIAL_ECHOPGM("axis_steps_per_mm[Y_AXIS]: ");SERIAL_ECHOLN(axis_steps_per_mm[Y_AXIS]);
+//   SERIAL_ECHOPGM("axis_steps_per_mm[Z_AXIS]: ");SERIAL_ECHOLN(axis_steps_per_mm[Z_AXIS]);
+//   SERIAL_ECHOPGM("axis_steps_per_mm[E_AXIS]: ");SERIAL_ECHOLN(axis_steps_per_mm[E_AXIS]);
+//   SERIAL_ECHOPGM("speed_factor: ");SERIAL_ECHOLN(speed_factor);
+//   LOOP_XYZE(i) {
+//     SERIAL_ECHOPGM("current_speed[i]: ");SERIAL_ECHOLN(current_speed[i]);
+//   }
+  // SERIAL_ECHOPGM("block->steps[X_AXIS]: ");SERIAL_ECHOLN(block->steps[X_AXIS]);
+  // SERIAL_ECHOPGM("block->steps[Y_AXIS]: ");SERIAL_ECHOLN(block->steps[Y_AXIS]);
+  // SERIAL_ECHOPGM("block->steps[Z_AXIS]: ");SERIAL_ECHOLN(block->steps[Z_AXIS]);
+  // SERIAL_ECHOPGM("block->steps[E_AXIS]: ");SERIAL_ECHOLN(block->steps[E_AXIS]);
+
+  // SERIAL_ECHOPGM("block->step_event_count: ");SERIAL_ECHOLN(block->step_event_count);
+  // SERIAL_ECHOPGM("inverse_mm_s: ");SERIAL_ECHOLN(inverse_mm_s);
+
+  // SERIAL_ECHOPGM("block->nominal_speed (mm/s)");SERIAL_ECHOLN(block->nominal_speed);
+  // SERIAL_ECHOPGM("block->nominal_rate(step/s)");SERIAL_ECHOLN(block->nominal_rate);
+// }
+// pref->counter = pref->counter + 1;
 
   // Max segement time in us.
   #ifdef XY_FREQUENCY_LIMIT

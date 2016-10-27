@@ -481,6 +481,7 @@ static uint8_t target_extruder;
   float delta_diagonal_rod_2_tower_2 = sq(delta_diagonal_rod + delta_diagonal_rod_trim_tower_2);
   float delta_diagonal_rod_2_tower_3 = sq(delta_diagonal_rod + delta_diagonal_rod_trim_tower_3);
   float delta_segments_per_second = DELTA_SEGMENTS_PER_SECOND;
+  // float delta_segments_per_second = 20;
   float delta_clip_start_height = Z_MAX_POS;
   #if ENABLED(AUTO_BED_LEVELING_FEATURE)
     int delta_grid_spacing[2] = { 0, 0 };
@@ -1625,6 +1626,9 @@ inline float get_homing_bump_feedrate(AxisEnum axis) {
 inline void line_to_current_position() {
   planner.buffer_line(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], MMM_TO_MMS(feedrate_mm_m), active_extruder);
 }
+inline void line_to_current_position2(float fraction_time) {
+  planner.buffer_line2(current_position[X_AXIS], current_position[Y_AXIS], current_position[Z_AXIS], current_position[E_AXIS], MMM_TO_MMS(feedrate_mm_m), active_extruder, 1, fraction_time);
+}
 
 inline void line_to_z(float zPosition) {
   planner.buffer_line(current_position[X_AXIS], current_position[Y_AXIS], zPosition, current_position[E_AXIS], MMM_TO_MMS(feedrate_mm_m), active_extruder);
@@ -1647,6 +1651,11 @@ inline void line_to_destination(float fr_mm_m) {
   planner.buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], MMM_TO_MMS(fr_mm_m), active_extruder);
 }
 inline void line_to_destination() { line_to_destination(feedrate_mm_m); }
+
+inline void line_to_destination2(float fr_mm_m, float fraction_time) {
+  planner.buffer_line(destination[X_AXIS], destination[Y_AXIS], destination[Z_AXIS], destination[E_AXIS], MMM_TO_MMS(fr_mm_m), active_extruder);
+}
+inline void line_to_destination2(float fraction_time) { line_to_destination2(feedrate_mm_m, fraction_time); }
 
 inline void set_current_to_destination() { memcpy(current_position, destination, sizeof(current_position)); }
 inline void set_destination_to_current() { memcpy(destination, current_position, sizeof(destination)); }
@@ -2940,7 +2949,7 @@ inline void gcode_G28() {
     // Move all carriages up together until the first endstop is hit.
     current_position[X_AXIS] = current_position[Y_AXIS] = current_position[Z_AXIS] = 3.0 * (Z_MAX_LENGTH);
     feedrate_mm_m = 1.732 * homing_feedrate_mm_m[X_AXIS];
-    line_to_current_position();
+    line_to_current_position(); 
     stepper.synchronize();
     endstops.hit_on_purpose(); // clear endstop hit flags
     current_position[X_AXIS] = current_position[Y_AXIS] = current_position[Z_AXIS] = 0.0;
@@ -2958,175 +2967,175 @@ inline void gcode_G28() {
 
   #else // NOT DELTA
 
-    bool homeX = code_seen('X'), homeY = code_seen('Y'), homeZ = code_seen('Z');
+    // bool homeX = code_seen('X'), homeY = code_seen('Y'), homeZ = code_seen('Z');
 
-    home_all_axis = (!homeX && !homeY && !homeZ) || (homeX && homeY && homeZ);
+    // home_all_axis = (!homeX && !homeY && !homeZ) || (homeX && homeY && homeZ);
 
-    set_destination_to_current();
+    // set_destination_to_current();
 
-    #if Z_HOME_DIR > 0  // If homing away from BED do Z first
+    // #if Z_HOME_DIR > 0  // If homing away from BED do Z first
 
-      if (home_all_axis || homeZ) {
-        HOMEAXIS(Z);
-        #if ENABLED(DEBUG_LEVELING_FEATURE)
-          if (DEBUGGING(LEVELING)) DEBUG_POS("> HOMEAXIS(Z)", current_position);
-        #endif
-      }
+    //   if (home_all_axis || homeZ) {
+    //     HOMEAXIS(Z);
+    //     #if ENABLED(DEBUG_LEVELING_FEATURE)
+    //       if (DEBUGGING(LEVELING)) DEBUG_POS("> HOMEAXIS(Z)", current_position);
+    //     #endif
+    //   }
 
-    #else
+    // #else
 
-      if (home_all_axis || homeX || homeY) {
-        // Raise Z before homing any other axes and z is not already high enough (never lower z)
-        destination[Z_AXIS] = LOGICAL_Z_POSITION(Z_HOMING_HEIGHT);
-        if (destination[Z_AXIS] > current_position[Z_AXIS]) {
+    //   if (home_all_axis || homeX || homeY) {
+    //     // Raise Z before homing any other axes and z is not already high enough (never lower z)
+    //     destination[Z_AXIS] = LOGICAL_Z_POSITION(Z_HOMING_HEIGHT);
+    //     if (destination[Z_AXIS] > current_position[Z_AXIS]) {
 
-          #if ENABLED(DEBUG_LEVELING_FEATURE)
-            if (DEBUGGING(LEVELING)) {
-              SERIAL_ECHOPAIR("Raise Z (before homing) to ", destination[Z_AXIS]);
-              SERIAL_EOL;
-            }
-          #endif
+    //       #if ENABLED(DEBUG_LEVELING_FEATURE)
+    //         if (DEBUGGING(LEVELING)) {
+    //           SERIAL_ECHOPAIR("Raise Z (before homing) to ", destination[Z_AXIS]);
+    //           SERIAL_EOL;
+    //         }
+    //       #endif
 
-          do_blocking_move_to_z(destination[Z_AXIS]);
-        }
-      }
+    //       do_blocking_move_to_z(destination[Z_AXIS]);
+    //     }
+    //   }
 
-    #endif
+    // #endif
 
-    #if ENABLED(QUICK_HOME)
+    // #if ENABLED(QUICK_HOME)
 
-      if (home_all_axis || (homeX && homeY)) quick_home_xy();
+    //   if (home_all_axis || (homeX && homeY)) quick_home_xy();
 
-    #endif
+    // #endif
 
-    #if ENABLED(HOME_Y_BEFORE_X)
+    // #if ENABLED(HOME_Y_BEFORE_X)
 
-      // Home Y
-      if (home_all_axis || homeY) {
-        HOMEAXIS(Y);
-        #if ENABLED(DEBUG_LEVELING_FEATURE)
-          if (DEBUGGING(LEVELING)) DEBUG_POS("> homeY", current_position);
-        #endif
-      }
+    //   // Home Y
+    //   if (home_all_axis || homeY) {
+    //     HOMEAXIS(Y);
+    //     #if ENABLED(DEBUG_LEVELING_FEATURE)
+    //       if (DEBUGGING(LEVELING)) DEBUG_POS("> homeY", current_position);
+    //     #endif
+    //   }
 
-    #endif
+    // #endif
 
     // Home X
-    if (home_all_axis || homeX) {
-      #if ENABLED(DUAL_X_CARRIAGE)
-        int tmp_extruder = active_extruder;
-        active_extruder = !active_extruder;
-        HOMEAXIS(X);
-        inactive_extruder_x_pos = RAW_X_POSITION(current_position[X_AXIS]);
-        active_extruder = tmp_extruder;
-        HOMEAXIS(X);
-        // reset state used by the different modes
-        memcpy(raised_parked_position, current_position, sizeof(raised_parked_position));
-        delayed_move_time = 0;
-        active_extruder_parked = true;
-      #else
-        HOMEAXIS(X);
-      #endif
-      #if ENABLED(DEBUG_LEVELING_FEATURE)
-        if (DEBUGGING(LEVELING)) DEBUG_POS("> homeX", current_position);
-      #endif
-    }
+    // if (home_all_axis || homeX) {
+    //   #if ENABLED(DUAL_X_CARRIAGE)
+    //     int tmp_extruder = active_extruder;
+    //     active_extruder = !active_extruder;
+    //     HOMEAXIS(X);
+    //     inactive_extruder_x_pos = RAW_X_POSITION(current_position[X_AXIS]);
+    //     active_extruder = tmp_extruder;
+    //     HOMEAXIS(X);
+    //     // reset state used by the different modes
+    //     memcpy(raised_parked_position, current_position, sizeof(raised_parked_position));
+    //     delayed_move_time = 0;
+    //     active_extruder_parked = true;
+    //   #else
+    //     HOMEAXIS(X);
+    //   #endif
+    //   #if ENABLED(DEBUG_LEVELING_FEATURE)
+    //     if (DEBUGGING(LEVELING)) DEBUG_POS("> homeX", current_position);
+    //   #endif
+    // }
 
-    #if DISABLED(HOME_Y_BEFORE_X)
-      // Home Y
-      if (home_all_axis || homeY) {
-        HOMEAXIS(Y);
-        #if ENABLED(DEBUG_LEVELING_FEATURE)
-          if (DEBUGGING(LEVELING)) DEBUG_POS("> homeY", current_position);
-        #endif
-      }
-    #endif
+    // #if DISABLED(HOME_Y_BEFORE_X)
+    //   // Home Y
+    //   if (home_all_axis || homeY) {
+    //     HOMEAXIS(Y);
+    //     #if ENABLED(DEBUG_LEVELING_FEATURE)
+    //       if (DEBUGGING(LEVELING)) DEBUG_POS("> homeY", current_position);
+    //     #endif
+    //   }
+    // #endif
 
     // Home Z last if homing towards the bed
-    #if Z_HOME_DIR < 0
+    // #if Z_HOME_DIR < 0
 
-      if (home_all_axis || homeZ) {
+    //   if (home_all_axis || homeZ) {
 
-        #if ENABLED(Z_SAFE_HOMING)
+    //     #if ENABLED(Z_SAFE_HOMING)
 
-          #if ENABLED(DEBUG_LEVELING_FEATURE)
-            if (DEBUGGING(LEVELING)) {
-              SERIAL_ECHOLNPGM("> Z_SAFE_HOMING >>>");
-            }
-          #endif
+    //       #if ENABLED(DEBUG_LEVELING_FEATURE)
+    //         if (DEBUGGING(LEVELING)) {
+    //           SERIAL_ECHOLNPGM("> Z_SAFE_HOMING >>>");
+    //         }
+    //       #endif
 
-          if (home_all_axis) {
+    //       if (home_all_axis) {
 
-            /**
-             * At this point we already have Z at Z_HOMING_HEIGHT height
-             * No need to move Z any more as this height should already be safe
-             * enough to reach Z_SAFE_HOMING XY positions.
-             * Just make sure the planner is in sync.
-             */
-            SYNC_PLAN_POSITION_KINEMATIC();
+    //         /**
+    //          * At this point we already have Z at Z_HOMING_HEIGHT height
+    //          * No need to move Z any more as this height should already be safe
+    //          * enough to reach Z_SAFE_HOMING XY positions.
+    //          * Just make sure the planner is in sync.
+    //          */
+    //         SYNC_PLAN_POSITION_KINEMATIC();
 
-            /**
-             * Move the Z probe (or just the nozzle) to the safe homing point
-             */
-            destination[X_AXIS] = round(Z_SAFE_HOMING_X_POINT - (X_PROBE_OFFSET_FROM_EXTRUDER));
-            destination[Y_AXIS] = round(Z_SAFE_HOMING_Y_POINT - (Y_PROBE_OFFSET_FROM_EXTRUDER));
-            destination[Z_AXIS] = current_position[Z_AXIS]; // Z is already at the right height
+    //         /**
+    //          * Move the Z probe (or just the nozzle) to the safe homing point
+    //          */
+    //         destination[X_AXIS] = round(Z_SAFE_HOMING_X_POINT - (X_PROBE_OFFSET_FROM_EXTRUDER));
+    //         destination[Y_AXIS] = round(Z_SAFE_HOMING_Y_POINT - (Y_PROBE_OFFSET_FROM_EXTRUDER));
+    //         destination[Z_AXIS] = current_position[Z_AXIS]; // Z is already at the right height
 
-            #if ENABLED(DEBUG_LEVELING_FEATURE)
-              if (DEBUGGING(LEVELING)) {
-                DEBUG_POS("> Z_SAFE_HOMING > home_all_axis", current_position);
-                DEBUG_POS("> Z_SAFE_HOMING > home_all_axis", destination);
-              }
-            #endif
+    //         #if ENABLED(DEBUG_LEVELING_FEATURE)
+    //           if (DEBUGGING(LEVELING)) {
+    //             DEBUG_POS("> Z_SAFE_HOMING > home_all_axis", current_position);
+    //             DEBUG_POS("> Z_SAFE_HOMING > home_all_axis", destination);
+    //           }
+    //         #endif
 
-            // Move in the XY plane
-            do_blocking_move_to_xy(destination[X_AXIS], destination[Y_AXIS]);
-          }
+    //         // Move in the XY plane
+    //         do_blocking_move_to_xy(destination[X_AXIS], destination[Y_AXIS]);
+    //       }
 
-          // Let's see if X and Y are homed
-          if (axis_unhomed_error(true, true, false)) return;
+    //       // Let's see if X and Y are homed
+    //       if (axis_unhomed_error(true, true, false)) return;
 
-          /**
-           * Make sure the Z probe is within the physical limits
-           * NOTE: This doesn't necessarily ensure the Z probe is also
-           * within the bed!
-           */
-          float cpx = RAW_CURRENT_POSITION(X_AXIS), cpy = RAW_CURRENT_POSITION(Y_AXIS);
-          if (   cpx >= X_MIN_POS - (X_PROBE_OFFSET_FROM_EXTRUDER)
-              && cpx <= X_MAX_POS - (X_PROBE_OFFSET_FROM_EXTRUDER)
-              && cpy >= Y_MIN_POS - (Y_PROBE_OFFSET_FROM_EXTRUDER)
-              && cpy <= Y_MAX_POS - (Y_PROBE_OFFSET_FROM_EXTRUDER)) {
+    //       /**
+    //        * Make sure the Z probe is within the physical limits
+    //        * NOTE: This doesn't necessarily ensure the Z probe is also
+    //        * within the bed!
+    //        */
+    //       float cpx = RAW_CURRENT_POSITION(X_AXIS), cpy = RAW_CURRENT_POSITION(Y_AXIS);
+    //       if (   cpx >= X_MIN_POS - (X_PROBE_OFFSET_FROM_EXTRUDER)
+    //           && cpx <= X_MAX_POS - (X_PROBE_OFFSET_FROM_EXTRUDER)
+    //           && cpy >= Y_MIN_POS - (Y_PROBE_OFFSET_FROM_EXTRUDER)
+    //           && cpy <= Y_MAX_POS - (Y_PROBE_OFFSET_FROM_EXTRUDER)) {
 
-            // Home the Z axis
-            HOMEAXIS(Z);
-          }
-          else {
-            LCD_MESSAGEPGM(MSG_ZPROBE_OUT);
-            SERIAL_ECHO_START;
-            SERIAL_ECHOLNPGM(MSG_ZPROBE_OUT);
-          }
+    //         // Home the Z axis
+    //         HOMEAXIS(Z);
+    //       }
+    //       else {
+    //         LCD_MESSAGEPGM(MSG_ZPROBE_OUT);
+    //         SERIAL_ECHO_START;
+    //         SERIAL_ECHOLNPGM(MSG_ZPROBE_OUT);
+    //       }
 
-          #if ENABLED(DEBUG_LEVELING_FEATURE)
-            if (DEBUGGING(LEVELING)) {
-              SERIAL_ECHOLNPGM("<<< Z_SAFE_HOMING");
-            }
-          #endif
+    //       #if ENABLED(DEBUG_LEVELING_FEATURE)
+    //         if (DEBUGGING(LEVELING)) {
+    //           SERIAL_ECHOLNPGM("<<< Z_SAFE_HOMING");
+    //         }
+    //       #endif
 
-        #else // !Z_SAFE_HOMING
+    //     #else // !Z_SAFE_HOMING
 
-          HOMEAXIS(Z);
+    //       HOMEAXIS(Z);
 
-        #endif // !Z_SAFE_HOMING
+    //     #endif // !Z_SAFE_HOMING
 
-        #if ENABLED(DEBUG_LEVELING_FEATURE)
-          if (DEBUGGING(LEVELING)) DEBUG_POS("> (home_all_axis || homeZ) > final", current_position);
-        #endif
+    //     #if ENABLED(DEBUG_LEVELING_FEATURE)
+    //       if (DEBUGGING(LEVELING)) DEBUG_POS("> (home_all_axis || homeZ) > final", current_position);
+    //     #endif
 
-      } // home_all_axis || homeZ
+    //   } // home_all_axis || homeZ
 
-    #endif // Z_HOME_DIR < 0
+    // #endif // Z_HOME_DIR < 0
 
-    SYNC_PLAN_POSITION_KINEMATIC();
+    // SYNC_PLAN_POSITION_KINEMATIC();
 
   #endif // !DELTA (gcode_G28)
 
@@ -7813,6 +7822,7 @@ void clamp_to_software_endstops(float target[3]) {
      
   }
 
+
   float delta_safe_distance_from_top() {
     float cartesian[3] = {
       LOGICAL_X_POSITION(0),
@@ -8020,6 +8030,21 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
 }
 #endif  // MESH_BED_LEVELING
 
+
+uint16_t eeprom_checksum2;
+int eeprom_index = 100;
+#define EEPROM_READ2(VAR) _EEPROM_readData2(eeprom_index, (uint8_t*)&VAR, sizeof(VAR))
+void _EEPROM_readData2(int &pos, uint8_t* value, uint8_t size) {
+  do {
+    uint8_t c = eeprom_read_byte((unsigned char*)pos);
+    *value = c;
+    // eeprom_checksum += c;
+    pos++;
+    value++;
+  } while (--size);
+}
+
+
 #if ENABLED(DELTA) || ENABLED(SCARA)
 
   inline bool prepare_kinematic_move_to(float target[NUM_AXIS]) {
@@ -8030,13 +8055,19 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
     if (cartesian_mm < 0.000001) cartesian_mm = abs(difference[E_AXIS]);
     if (cartesian_mm < 0.000001) return false;
     float _feedrate_mm_s = MMM_TO_MMS_SCALED(feedrate_mm_m);
+
     float seconds = cartesian_mm / _feedrate_mm_s;
     int steps = max(1, int(delta_segments_per_second * seconds));
     float inv_steps = 1.0/steps;
 
+    // SERIAL_ECHOPGM("delta_segments_per_second"); SERIAL_ECHOLN(delta_segments_per_second);
+
     // SERIAL_ECHOPGM("mm="); SERIAL_ECHO(cartesian_mm);
     // SERIAL_ECHOPGM(" seconds="); SERIAL_ECHO(seconds);
-    SERIAL_ECHOPGM(" steps="); SERIAL_ECHOLN(steps);
+    // SERIAL_ECHOPGM(" steps="); SERIAL_ECHO(steps);
+    // SERIAL_ECHOPGM(" inv_steps="); SERIAL_ECHOLN(inv_steps);
+
+    float fraction_time = seconds*inv_steps;
 
     for (int s = 1; s <= steps; s++) {
 
@@ -8054,10 +8085,11 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
       // DEBUG_POS("prepare_kinematic_move_to", target);
       // DEBUG_POS("prepare_kinematic_move_to", delta);
 
+        //delta[X_AXIS],...はTowerの絶対位置
       if(s==1){
-        planner.buffer_line2(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder, 1);
+        planner.buffer_line2(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder, 1, fraction_time);
       }else{
-        planner.buffer_line2(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder, 0);
+        planner.buffer_line2(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder, 0, fraction_time);
       }
     }
     return true;
@@ -8602,7 +8634,7 @@ void manage_inactivity(bool ignore_stepper_queue/*=false*/) {
     // Exceeded threshold and we can confirm that it was not accidental
     // KILL the machine
     // ----------------------------------------------------------------
-    if (killCount >= KILL_DELAY) kill(PSTR(MSG_KILLED));
+    // if (killCount >= KILL_DELAY) kill(PSTR(MSG_KILLED));
   #endif
 
   #if HAS_HOME

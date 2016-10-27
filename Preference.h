@@ -14,6 +14,7 @@ class Preference
     float density;
     float extruded_width;
     float extruded_height;
+    long counter;
 };
 
 #endif

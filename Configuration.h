@@ -412,24 +412,25 @@
   // This is a trade-off between visible corners (not enough segments)
   // and processor overload (too many expensive sqrt calls).
   // #define DELTA_SEGMENTS_PER_SECOND 20
-  #define DELTA_SEGMENTS_PER_SECOND 20
+  #define DELTA_SEGMENTS_PER_SECOND 20 
   // #define DELTA_SEGMENTS_PER_SECOND 20
 
   // NOTE NB all values for DELTA_* values MUST be floating point, so always have a decimal point in them
 
   // Center-to-center distance of the holes in the diagonal push rods.
-  #define DELTA_DIAGONAL_ROD 430.4 // mm
+  // #define DELTA_DIAGONAL_ROD 430.4 // mm
+  #define DELTA_DIAGONAL_ROD 263.52 // mm
 
   // Horizontal offset from middle of printer to smooth rod center.
   // #define DELTA_SMOOTH_ROD_OFFSET 431.5 // mm
   // #define DELTA_SMOOTH_ROD_OFFSET 436.5 // mm
 //true
-  #define DELTA_SMOOTH_ROD_OFFSET 441.5 // mm
+  #define DELTA_SMOOTH_ROD_OFFSET 231 // mm
 //
   // #define DELTA_SMOOTH_ROD_OFFSET 446.5 // mm
 
   // Horizontal offset of the universal joints on the end effector.
-  #define DELTA_EFFECTOR_OFFSET 219.3// mm
+  #define DELTA_EFFECTOR_OFFSET 52 // mm
 
   // Horizontal offset of the universal joints on the carriages.
   // #define DELTA_CARRIAGE_OFFSET 68.3 // mm
@@ -884,7 +885,8 @@
 
 // default settings
 // delta speeds must be the same on xyz
-#define DEFAULT_AXIS_STEPS_PER_UNIT   {XYZ_STEPS, XYZ_STEPS, XYZ_STEPS, 184.8}
+// #define DEFAULT_AXIS_STEPS_PER_UNIT   {XYZ_STEPS, XYZ_STEPS, XYZ_STEPS, 184.8}
+#define DEFAULT_AXIS_STEPS_PER_UNIT   {XYZ_STEPS, XYZ_STEPS, XYZ_STEPS, 1}
 #define DEFAULT_MAX_FEEDRATE          {2000, 2000, 2000, 2000}    // (mm/sec)
 #define DEFAULT_MAX_ACCELERATION      {900,900,900,900}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
 
@@ -912,7 +914,7 @@
 // M501 - reads parameters from EEPROM (if you need reset them after you changed them temporarily).
 // M502 - reverts to the default "factory settings".  You still need to store them in EEPROM afterwards if you want to.
 //define this to enable EEPROM support
-//#define EEPROM_SETTINGS
+// #define EEPROM_SETTINGS
 
 #if ENABLED(EEPROM_SETTINGS)
   // To disable EEPROM Serial responses and decrease program space by ~1700 byte: comment this out:

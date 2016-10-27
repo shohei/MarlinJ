@@ -571,7 +571,7 @@ void Stepper::isr() {
         step_rate = current_block->final_rate;
 
       // step_rate to timer interval
-      timer = calc_timer(step_rate);
+      timer = calc_timer(step_rate);//debug
       OCR1A = timer;
       deceleration_time += timer;
 
@@ -610,7 +610,7 @@ void Stepper::isr() {
         eISR_Rate = (timer >> 2) * step_loops / abs(e_steps[TOOL_E_INDEX]);
       #endif
     }
-    else {
+    else { //slew speed
 
       #if ENABLED(LIN_ADVANCE)
 

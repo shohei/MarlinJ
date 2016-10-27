@@ -290,7 +290,7 @@ class Stepper {
         step_loops = 1;
       }
 
-      NOLESS(step_rate, F_CPU / 500000);
+      NOLESS(step_rate, F_CPU / 500000); //no less than 32
       step_rate -= F_CPU / 500000; // Correct for minimal speed
       if (step_rate >= (8 * 256)) { // higher step rate
         unsigned short table_address = (unsigned short)&speed_lookuptable_fast[(unsigned char)(step_rate >> 8)][0];
