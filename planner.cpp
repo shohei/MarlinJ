@@ -78,6 +78,7 @@ float previous_de = 0.0;
 float previous_snw = 0.0;
 bool screw_stopped = true;
 float previous_dz = 0.0;
+bool is_first_stage = true;
 
 /**
  * A ring buffer of moves described in steps
@@ -1226,7 +1227,13 @@ void Planner::check_axes_activity() {
            Serial3.println(snw,1);
            delay(30); //make sure to finish serial communication
            #ifdef ENABLE_FREEZE
+           if(is_first_stage){
+             SERIAL_ECHOLNPGM("FIRST LAYER FREEZE");
+             freeze(3000);
+             is_first_stage=false;
+           } else {
              freeze(1000);
+           }
            #endif
         }
       } else {

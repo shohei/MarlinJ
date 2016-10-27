@@ -2593,6 +2593,7 @@ static void homeaxis(AxisEnum axis) {
  *  - Set to current for missing axis codes
  *  - Set the feedrate, if included
  */
+
 void gcode_get_destination() {
   if (code_seen('E')){
     do_extrude = true;
@@ -8065,7 +8066,7 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
       if(s==1){
         planner.buffer_line2(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder, 1, fraction_time, do_extrude);
       }else{
-        planner.buffer_line2(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder, 0, fraction_time, do_extrude) ;
+        planner.buffer_line2(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder, 0, fraction_time, do_extrude);
       }
     }
     return true;

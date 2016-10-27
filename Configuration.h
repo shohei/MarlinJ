@@ -849,7 +849,8 @@
 // #define MANUAL_Z_HOME_POS 180// Distance between the nozzle to printbed after homing
 // #define MANUAL_Z_HOME_POS 300 // Distance between the nozzle to printbed after homing
 // #define MANUAL_Z_HOME_POS 365 // Distance between the nozzle to printbed after homing
-#define MANUAL_Z_HOME_POS 372.3// Distance between the nozzle to printbed after homing
+// #define MANUAL_Z_HOME_POS 372.3// Distance between the nozzle to printbed after homing
+#define MANUAL_Z_HOME_POS 370.3// Distance between the nozzle to printbed after homing
 
 // Use "Z Safe Homing" to avoid homing with a Z probe outside the bed area.
 //
