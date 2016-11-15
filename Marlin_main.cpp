@@ -7639,6 +7639,18 @@ void process_next_command() {
         get_extruded_height();
         break;
 
+      case 724:
+        set_heater_temperature();
+        break;
+
+      case 725:
+        set_needle_valve();
+        break;
+
+      case 726:
+        set_screw_speed();
+        break; 
+
       #if ENABLED(LIN_ADVANCE)
         case 905: // M905 Set advance factor.
           gcode_M905();
@@ -7732,6 +7744,52 @@ void get_extruded_height(){
       pref->extruded_height = code_value_float();
       SERIAL_ECHOPGM("extruded_height updated: ");
       SERIAL_ECHOLN(pref->extruded_height);
+    }
+}
+
+void set_heater_temperature(){
+    float t_barrel_rear, t_barrel_middle, t_barrel_front,
+          t_manihold_top, t_manihold_bottom, t_nozzle;
+    t_barrel_rear=t_barrel_middle=t_barrel_front=t_manihold_top=t_manihold_bottom=t_nozzle=0;
+
+    if (code_seen('A')) {
+      t_barrel_rear = code_value_float();
+    }
+    if (code_seen('B')) {
+      t_barrel_middle = code_value_float();
+    }
+    if (code_seen('C')) {
+      t_barrel_front = code_value_float();
+    }
+    if (code_seen('D')) {
+      t_manihold_top = code_value_float();
+    }
+    if (code_seen('E')) {
+      t_manihold_bottom = code_value_float();
+    }
+    if (code_seen('F')) {
+      t_nozzle = code_value_float();
+    }
+}
+
+void set_needle_valve(){
+    if (code_seen('S')) {
+      int run_status = code_value_int();
+      if(run_status==0){
+        //close pin and screw
+        Serial3.println("SNW,0");
+      } else if(run_status==1){
+        //open pin only (no screw operation)
+        Serial3.println("NVW,1");
+      }
+    }
+}
+
+void set_screw_speed(){
+    if (code_seen('S')) {
+      float _snw = code_value_float();
+      Serial3.print("SNW,");
+      Serial3.println(_snw);
     }
 }
 
