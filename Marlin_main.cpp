@@ -5077,6 +5077,18 @@ inline void gcode_M81() {
   #endif
 }
 
+/**
+ * M73: Set build percentage 
+ */
+inline void gcode_M73() { 
+  if(code_seen('P')){
+    float _percentage = code_value_int();
+    if(_percentage==100){
+      //stop screw when printing finishes
+      Serial3.println("SNW,0"); 
+    }
+  }
+}
 
 /**
  * M82: Set E codes absolute (default)
@@ -7336,6 +7348,9 @@ void process_next_command() {
         gcode_M83();
         break;
       case 18: // (for compatibility)
+      case 73: //Set build percentage
+        gcode_M73();
+        break;
       case 84: // M84
         gcode_M18_M84();
         break;
