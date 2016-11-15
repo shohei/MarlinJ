@@ -5114,6 +5114,8 @@ inline void gcode_M18_M84() {
         }
       #endif
     }
+    //stop the screw when printing finishes
+    Serial3.println("SNW,0");
   }
 }
 
