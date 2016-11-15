@@ -235,6 +235,7 @@ void ok_to_send();
 
 void reset_bed_level();
 void kill(const char*);
+void external_kill();
 
 void quickstop_stepper();
 

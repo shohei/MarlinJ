@@ -881,6 +881,10 @@ void setup() {
 
   Serial3.begin(115200);
   // Serial3.println("Serial3 initialized");
+  pinMode(EMERGENCY_OUT_PLC_PIN,OUTPUT);
+  digitalWrite(EMERGENCY_OUT_PLC_PIN,LOW);
+  pinMode(EMERGENCY_IN_PLC_PIN,INPUT);
+  attachInterrupt(EMERGENCY_IN_PLC_PIN,external_kill,CHANGE);
 
   // Check startup - does nothing if bootloader sets MCUSR to 0
   byte mcu = MCUSR;
@@ -8605,6 +8609,23 @@ void disable_all_steppers() {
   disable_e3();
 }
 
+void external_kill(){
+  // Check if the kill button was pressed and wait just in case it was an accidental
+  // key kill key press
+  // -------------------------------------------------------------------------------
+  static int killCount = 0;   // make the inactivity button a bit less responsive
+  const int KILL_DELAY = 750;
+  if (!READ(EMERGENCY_IN_PLC_PIN))
+    killCount++;
+  else if (killCount > 0)
+    killCount--;
+
+  // Exceeded threshold and we can confirm that it was not accidental
+  // KILL the machine
+  // ----------------------------------------------------------------
+  if (killCount >= KILL_DELAY) kill(PSTR(MSG_KILLED));
+}
+
 /**
  * Standard idle routine keeps the machine alive
  */
@@ -8810,6 +8831,8 @@ void manage_inactivity(bool ignore_stepper_queue/*=false*/) {
 }
 
 void kill(const char* lcd_msg) {
+  digitalWrite(EMERGENCY_OUT_PLC_PIN,HIGH);
+
   SERIAL_ERROR_START;
   SERIAL_ERRORLNPGM(MSG_ERR_KILLED);
 
