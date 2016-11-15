@@ -7754,21 +7754,33 @@ void set_heater_temperature(){
 
     if (code_seen('A')) {
       t_barrel_rear = code_value_float();
+      Serial3.print("BbTW,");
+      Serial3.println(t_barrel_rear);
     }
     if (code_seen('B')) {
       t_barrel_middle = code_value_float();
+      Serial3.print("BdTW,");
+      Serial3.println(t_barrel_middle);
     }
     if (code_seen('C')) {
       t_barrel_front = code_value_float();
+      Serial3.print("BaTW,");
+      Serial3.println(t_barrel_front);
     }
     if (code_seen('D')) {
       t_manihold_top = code_value_float();
+      Serial3.print("MhTW,");
+      Serial3.println(t_manihold_top);
     }
     if (code_seen('E')) {
       t_manihold_bottom = code_value_float();
+      Serial3.print("MlTW,");
+      Serial3.println(t_manihold_bottom);
     }
     if (code_seen('F')) {
       t_nozzle = code_value_float();
+      Serial3.print("NTW,");
+      Serial3.println(t_nozzle);
     }
 }
 
