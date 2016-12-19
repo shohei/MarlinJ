@@ -464,6 +464,7 @@ static uint8_t target_extruder;
   #define SIN_60 0.8660254037844386
   #define COS_60 0.5
   float endstop_adj[3] = { 0 };
+  float trim[3] = { 0 };
   // these are the default values, can be overriden with M665
   float delta_radius = DELTA_RADIUS;
   // float delta_tower1_x = -SIN_60 * (delta_radius + DELTA_RADIUS_TRIM_TOWER_1); // front left tower
@@ -5441,30 +5442,48 @@ inline void gcode_M206() {
    * M666: Set delta endstop adjustment
    */
   inline void gcode_M666() {
-    #if ENABLED(DEBUG_LEVELING_FEATURE)
-      if (DEBUGGING(LEVELING)) {
+    // #if ENABLED(DEBUG_LEVELING_FEATURE)
+    //   if (DEBUGGING(LEVELING)) {
         SERIAL_ECHOLNPGM(">>> gcode_M666");
-      }
-    #endif
+      // }
+    // #endif
     LOOP_XYZ(i) {
       if (code_seen(axis_codes[i])) {
         endstop_adj[i] = code_value_axis_units(i);
-        #if ENABLED(DEBUG_LEVELING_FEATURE)
-          if (DEBUGGING(LEVELING)) {
+        // #if ENABLED(DEBUG_LEVELING_FEATURE)
+          // if (DEBUGGING(LEVELING)) {
             SERIAL_ECHOPGM("endstop_adj[");
             SERIAL_ECHO(axis_codes[i]);
             SERIAL_ECHOPAIR("] = ", endstop_adj[i]);
             SERIAL_EOL;
-          }
-        #endif
+          // }
+        // #endif
       }
     }
-    #if ENABLED(DEBUG_LEVELING_FEATURE)
-      if (DEBUGGING(LEVELING)) {
+    // #if ENABLED(DEBUG_LEVELING_FEATURE)
+      // if (DEBUGGING(LEVELING)) {
         SERIAL_ECHOLNPGM("<<< gcode_M666");
-      }
-    #endif
+      // }
+    // #endif
   }
+
+  // inline void gcode_M667() {
+  //   LOOP_XYZ(i) {
+  //     if (code_seen(axis_codes[i])) {
+  //       trim[i] = code_value_float();
+  //       SERIAL_ECHOPGM("trim[");
+  //       SERIAL_ECHO(axis_codes[i]);
+  //       SERIAL_ECHOPAIR("] = ", trim[i]);
+  //       SERIAL_EOL;
+  //     }
+  //   }
+  //   delta_tower1_x = SIN_60 * (delta_radius + trim[0]); 
+  //   delta_tower1_y = -COS_60 * (delta_radius + trim[0]);
+  //   delta_tower2_x = -SIN_60 * (delta_radius + trim[1]); 
+  //   delta_tower2_y = -COS_60 * (delta_radius + trim[1]);
+  //   delta_tower3_x = 0; 
+  //   delta_tower3_y = (delta_radius + trim[2]);
+  // }
 
 #elif ENABLED(Z_DUAL_ENDSTOPS) // !DELTA && ENABLED(Z_DUAL_ENDSTOPS)
 
@@ -7446,6 +7465,9 @@ void process_next_command() {
         case 666: // M666 set delta / dual endstop adjustment
           gcode_M666();
           break;
+        // case 667: 
+        //   gcode_M667();
+        //   break;
       #endif
 
       #if ENABLED(FWRETRACT)
@@ -7777,9 +7799,9 @@ void clamp_to_software_endstops(float target[3]) {
 #if ENABLED(DELTA)
 
   void recalc_delta_settings(float radius, float diagonal_rod) {
-    delta_tower1_x = -SIN_60 * (radius + DELTA_RADIUS_TRIM_TOWER_1);  // front left tower
+    delta_tower1_x = SIN_60 * (radius + DELTA_RADIUS_TRIM_TOWER_1);  // front left tower
     delta_tower1_y = -COS_60 * (radius + DELTA_RADIUS_TRIM_TOWER_1);
-    delta_tower2_x =  SIN_60 * (radius + DELTA_RADIUS_TRIM_TOWER_2);  // front right tower
+    delta_tower2_x = -SIN_60 * (radius + DELTA_RADIUS_TRIM_TOWER_2);  // front right tower
     delta_tower2_y = -COS_60 * (radius + DELTA_RADIUS_TRIM_TOWER_2);
     delta_tower3_x = 0.0;                                             // back middle tower
     delta_tower3_y = (radius + DELTA_RADIUS_TRIM_TOWER_3);

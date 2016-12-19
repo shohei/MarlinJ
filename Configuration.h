@@ -419,7 +419,9 @@
 
   // Center-to-center distance of the holes in the diagonal push rods.
   // #define DELTA_DIAGONAL_ROD 430.4 // mm
+  // #define DELTA_DIAGONAL_ROD 366.0 // mm
   #define DELTA_DIAGONAL_ROD 366.0 // mm
+  // #define DELTA_DIAGONAL_ROD 366.1 // mm
 
   // Horizontal offset from middle of printer to smooth rod center.
   // #define DELTA_SMOOTH_ROD_OFFSET 431.5 // mm
@@ -439,7 +441,8 @@
   // #define DELTA_CARRIAGE_OFFSET 68.8 // mm
 //true
   // #define DELTA_CARRIAGE_OFFSET 69.3 // mm
-  #define DELTA_CARRIAGE_OFFSET 67.7 // mm
+  // #define DELTA_CARRIAGE_OFFSET (67.7-4) // mm
+  #define DELTA_CARRIAGE_OFFSET (67.7) // mm
 //median
   // #define DELTA_CARRIAGE_OFFSET 69.8 // mm
   // #define DELTA_CARRIAGE_OFFSET 71.3 // mm
@@ -448,7 +451,8 @@
   // Horizontal distance bridged by diagonal push rods when effector is centered.
   // #define DELTA_RADIUS 152.9
   // #define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-(DELTA_EFFECTOR_OFFSET)-(DELTA_CARRIAGE_OFFSET))
-  #define DELTA_RADIUS 156.1
+  #define DELTA_RADIUS 145
+  // #define DELTA_RADIUS (156.1+1)
 
   // Print surface diameter/2 minus unreachable space (avoid collisions with vertical towers).
   #define DELTA_PRINTABLE_RADIUS 150
@@ -754,7 +758,7 @@
 //============================ Mesh Bed Leveling ============================
 //===========================================================================
 
-//#define MESH_BED_LEVELING    // Enable mesh bed leveling.
+// #define MESH_BED_LEVELING    // Enable mesh bed leveling.
 
 #if ENABLED(MESH_BED_LEVELING)
   #define MESH_INSET 10        // Mesh inset margin on print area
@@ -764,7 +768,7 @@
 
   //#define MESH_G28_REST_ORIGIN // After homing all axes ('G28' or 'G28 XYZ') rest at origin [0,0,0]
 
-  //#define MANUAL_BED_LEVELING  // Add display menu option for bed leveling.
+  // #define MANUAL_BED_LEVELING  // Add display menu option for bed leveling.
 
   #if ENABLED(MANUAL_BED_LEVELING)
     #define MBL_Z_STEP 0.025  // Step size while manually probing Z axis.
@@ -778,12 +782,12 @@
 
 // @section bedlevel
 
-//#define AUTO_BED_LEVELING_FEATURE // Delete the comment to enable (remove // at the start of the line)
+// #define AUTO_BED_LEVELING_FEATURE // Delete the comment to enable (remove // at the start of the line)
 
 // Enable this feature to get detailed logging of G28, G29, M48, etc.
 // Logging is off by default. Enable this logging feature with 'M111 S32'.
 // NOTE: Requires a huge amount of PROGMEM.
-//#define DEBUG_LEVELING_FEATURE
+// #define DEBUG_LEVELING_FEATURE
 
 #if ENABLED(AUTO_BED_LEVELING_FEATURE)
 
@@ -856,7 +860,8 @@
 // #define MANUAL_Z_HOME_POS 365 // Distance between the nozzle to printbed after homing
 // #define MANUAL_Z_HOME_POS 372.3// Distance between the nozzle to printbed after homing
 // #define MANUAL_Z_HOME_POS 370.3// Distance between the nozzle to printbed after homing
-#define MANUAL_Z_HOME_POS 436.3// Distance between the nozzle to printbed after homing
+// #define MANUAL_Z_HOME_POS 436.3// Distance between the nozzle to printbed after homing
+#define MANUAL_Z_HOME_POS 432.3// Distance between the nozzle to printbed after homing
 
 // Use "Z Safe Homing" to avoid homing with a Z probe outside the bed area.
 //
@@ -883,8 +888,8 @@
 //
 
 #define XYZ_FULL_STEPS_PER_ROTATION 200
-#define XYZ_MICROSTEPS 8 
-// #define XYZ_MICROSTEPS 16
+// #define XYZ_MICROSTEPS 1 
+#define XYZ_MICROSTEPS 16
 #define XYZ_BELT_PITCH 1
 #define XYZ_PULLEY_TEETH 12
 #define XYZ_STEPS ((XYZ_FULL_STEPS_PER_ROTATION) * (XYZ_MICROSTEPS) / double(XYZ_BELT_PITCH) / double(XYZ_PULLEY_TEETH))
@@ -893,11 +898,16 @@
 // delta speeds must be the same on xyz
 #define DEFAULT_AXIS_STEPS_PER_UNIT   {XYZ_STEPS, XYZ_STEPS, XYZ_STEPS, 184.8}
 #define DEFAULT_MAX_FEEDRATE          {2000, 2000, 2000, 2000}    // (mm/sec)
-#define DEFAULT_MAX_ACCELERATION      {900,900,900,900}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
+// #define DEFAULT_MAX_ACCELERATION      {900,900,900,900}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
+#define DEFAULT_MAX_ACCELERATION      {600,600,600,600}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
+// #define DEFAULT_MAX_ACCELERATION      {9000,9000,9000,9000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
 
 #define DEFAULT_ACCELERATION          300    // X, Y, Z and E acceleration in mm/s^2 for printing moves
 #define DEFAULT_RETRACT_ACCELERATION  300    // E acceleration in mm/s^2 for retracts
 #define DEFAULT_TRAVEL_ACCELERATION   300    // X, Y, Z acceleration in mm/s^2 for travel (non printing) moves
+// #define DEFAULT_ACCELERATION          3000    // X, Y, Z and E acceleration in mm/s^2 for printing moves
+// #define DEFAULT_RETRACT_ACCELERATION  3000    // E acceleration in mm/s^2 for retracts
+// #define DEFAULT_TRAVEL_ACCELERATION   3000    // X, Y, Z acceleration in mm/s^2 for travel (non printing) moves
 
 // The speed change that does not require acceleration (i.e. the software might assume it can be done instantaneously)
 #define DEFAULT_XYJERK                5.0    // (mm/sec)
