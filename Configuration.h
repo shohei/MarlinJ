@@ -418,24 +418,24 @@
   // NOTE NB all values for DELTA_* values MUST be floating point, so always have a decimal point in them
 
   // Center-to-center distance of the holes in the diagonal push rods.
-  #define DELTA_DIAGONAL_ROD 430.4 // mm
+  #define DELTA_DIAGONAL_ROD 423.0 // mm
 
   // Horizontal offset from middle of printer to smooth rod center.
   // #define DELTA_SMOOTH_ROD_OFFSET 431.5 // mm
   // #define DELTA_SMOOTH_ROD_OFFSET 436.5 // mm
 //true
-  #define DELTA_SMOOTH_ROD_OFFSET 441.5 // mm
+  #define DELTA_SMOOTH_ROD_OFFSET 293.55 // mm
 //
   // #define DELTA_SMOOTH_ROD_OFFSET 446.5 // mm
 
   // Horizontal offset of the universal joints on the end effector.
-  #define DELTA_EFFECTOR_OFFSET 219.3// mm
+  #define DELTA_EFFECTOR_OFFSET 80// mm
 
   // Horizontal offset of the universal joints on the carriages.
   // #define DELTA_CARRIAGE_OFFSET 68.3 // mm
   // #define DELTA_CARRIAGE_OFFSET 68.8 // mm
 //true
-  #define DELTA_CARRIAGE_OFFSET 69.3 // mm
+  #define DELTA_CARRIAGE_OFFSET 34.4 // mm
 //median
   // #define DELTA_CARRIAGE_OFFSET 69.8 // mm
   // #define DELTA_CARRIAGE_OFFSET 71.3 // mm
@@ -446,7 +446,7 @@
   #define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-(DELTA_EFFECTOR_OFFSET)-(DELTA_CARRIAGE_OFFSET))
 
   // Print surface diameter/2 minus unreachable space (avoid collisions with vertical towers).
-  #define DELTA_PRINTABLE_RADIUS 150
+  #define DELTA_PRINTABLE_RADIUS 175
 
   // Delta calibration menu
   // uncomment to add three points calibration menu option.
@@ -719,8 +719,8 @@
 #define Y_HOME_DIR 1
 #define Z_HOME_DIR 1
 
-#define min_software_endstops false// If true, axis won't move to coordinates less than HOME_POS.
-#define max_software_endstops true  // If true, axis won't move to coordinates greater than the defined lengths below.
+#define min_software_endstops true// If true, axis won't move to coordinates less than HOME_POS.
+#define max_software_endstops true// If true, axis won't move to coordinates greater than the defined lengths below.
 
 // @section machine
 
@@ -850,7 +850,9 @@
 // #define MANUAL_Z_HOME_POS 300 // Distance between the nozzle to printbed after homing
 // #define MANUAL_Z_HOME_POS 365 // Distance between the nozzle to printbed after homing
 // #define MANUAL_Z_HOME_POS 372.3// Distance between the nozzle to printbed after homing
-#define MANUAL_Z_HOME_POS 370.3// Distance between the nozzle to printbed after homing
+// #define MANUAL_Z_HOME_POS 370.3// Distance between the nozzle to printbed after homing
+// #define MANUAL_Z_HOME_POS 421.9// Distance between the nozzle to printbed after homing
+#define MANUAL_Z_HOME_POS 413.5// Distance between the nozzle to printbed after homing
 
 // Use "Z Safe Homing" to avoid homing with a Z probe outside the bed area.
 //
