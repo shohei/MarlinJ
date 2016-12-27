@@ -882,6 +882,10 @@ void setup() {
 
   Serial3.begin(115200);
   // Serial3.println("Serial3 initialized");
+  pinMode(EMERGENCY_OUT_PLC_PIN,OUTPUT);
+  digitalWrite(EMERGENCY_OUT_PLC_PIN,LOW);
+  pinMode(EMERGENCY_IN_PLC_PIN,INPUT);
+  attachInterrupt(EMERGENCY_IN_PLC_PIN,external_kill,CHANGE);
 
   // Check startup - does nothing if bootloader sets MCUSR to 0
   byte mcu = MCUSR;
@@ -5078,6 +5082,18 @@ inline void gcode_M81() {
   #endif
 }
 
+/**
+ * M73: Set build percentage 
+ */
+inline void gcode_M73() { 
+  if(code_seen('P')){
+    float _percentage = code_value_int();
+    if(_percentage==100){
+      //stop screw when printing finishes
+      Serial3.println("SNW,0"); 
+    }
+  }
+}
 
 /**
  * M82: Set E codes absolute (default)
@@ -5115,6 +5131,8 @@ inline void gcode_M18_M84() {
         }
       #endif
     }
+    //stop the screw when printing finishes
+    Serial3.println("SNW,0");
   }
 }
 
@@ -7353,6 +7371,9 @@ void process_next_command() {
         gcode_M83();
         break;
       case 18: // (for compatibility)
+      case 73: //Set build percentage
+        gcode_M73();
+        break;
       case 84: // M84
         gcode_M18_M84();
         break;
@@ -7661,6 +7682,18 @@ void process_next_command() {
         get_extruded_height();
         break;
 
+      case 724:
+        set_heater_temperature();
+        break;
+
+      case 725:
+        set_needle_valve();
+        break;
+
+      case 726:
+        set_screw_speed();
+        break; 
+
       #if ENABLED(LIN_ADVANCE)
         case 905: // M905 Set advance factor.
           gcode_M905();
@@ -7754,6 +7787,64 @@ void get_extruded_height(){
       pref->extruded_height = code_value_float();
       SERIAL_ECHOPGM("extruded_height updated: ");
       SERIAL_ECHOLN(pref->extruded_height);
+    }
+}
+
+void set_heater_temperature(){
+    float t_barrel_rear, t_barrel_middle, t_barrel_front,
+          t_manihold_top, t_manihold_bottom, t_nozzle;
+    t_barrel_rear=t_barrel_middle=t_barrel_front=t_manihold_top=t_manihold_bottom=t_nozzle=0;
+
+    if (code_seen('A')) {
+      t_barrel_rear = code_value_float();
+      Serial3.print("BbTW,");
+      Serial3.println(t_barrel_rear);
+    }
+    if (code_seen('B')) {
+      t_barrel_middle = code_value_float();
+      Serial3.print("BdTW,");
+      Serial3.println(t_barrel_middle);
+    }
+    if (code_seen('C')) {
+      t_barrel_front = code_value_float();
+      Serial3.print("BaTW,");
+      Serial3.println(t_barrel_front);
+    }
+    if (code_seen('D')) {
+      t_manihold_top = code_value_float();
+      Serial3.print("MhTW,");
+      Serial3.println(t_manihold_top);
+    }
+    if (code_seen('E')) {
+      t_manihold_bottom = code_value_float();
+      Serial3.print("MlTW,");
+      Serial3.println(t_manihold_bottom);
+    }
+    if (code_seen('F')) {
+      t_nozzle = code_value_float();
+      Serial3.print("NTW,");
+      Serial3.println(t_nozzle);
+    }
+}
+
+void set_needle_valve(){
+    if (code_seen('S')) {
+      int run_status = code_value_int();
+      if(run_status==0){
+        //close pin and screw
+        Serial3.println("SNW,0");
+      } else if(run_status==1){
+        //open pin only (no screw operation)
+        Serial3.println("NVW,1");
+      }
+    }
+}
+
+void set_screw_speed(){
+    if (code_seen('S')) {
+      float _snw = code_value_float();
+      Serial3.print("SNW,");
+      Serial3.println(_snw);
     }
 }
 
@@ -8540,6 +8631,23 @@ void disable_all_steppers() {
   disable_e3();
 }
 
+void external_kill(){
+  // Check if the kill button was pressed and wait just in case it was an accidental
+  // key kill key press
+  // -------------------------------------------------------------------------------
+  static int killCount = 0;   // make the inactivity button a bit less responsive
+  const int KILL_DELAY = 750;
+  if (!READ(EMERGENCY_IN_PLC_PIN))
+    killCount++;
+  else if (killCount > 0)
+    killCount--;
+
+  // Exceeded threshold and we can confirm that it was not accidental
+  // KILL the machine
+  // ----------------------------------------------------------------
+  if (killCount >= KILL_DELAY) kill(PSTR(MSG_KILLED));
+}
+
 /**
  * Standard idle routine keeps the machine alive
  */
@@ -8745,6 +8853,8 @@ void manage_inactivity(bool ignore_stepper_queue/*=false*/) {
 }
 
 void kill(const char* lcd_msg) {
+  digitalWrite(EMERGENCY_OUT_PLC_PIN,HIGH);
+
   SERIAL_ERROR_START;
   SERIAL_ERRORLNPGM(MSG_ERR_KILLED);
 
