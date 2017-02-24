@@ -469,15 +469,15 @@
 // Specify here all the endstop connectors that are connected to any endstop or probe.
 // Almost all printers will be using one per axis. Probes will use one or more of the
 // extra connectors. Leave undefined any used for non-endstop and non-probe purposes.
-//#define USE_XMIN_PLUG
-//#define USE_YMIN_PLUG
+#define USE_XMIN_PLUG
+#define USE_YMIN_PLUG
 #define USE_ZMIN_PLUG // a Z probe
 #define USE_XMAX_PLUG
 #define USE_YMAX_PLUG
 #define USE_ZMAX_PLUG
 
 // coarse Endstop Settings
-#define ENDSTOPPULLUPS // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
+// #define ENDSTOPPULLUPS // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
 
 #if DISABLED(ENDSTOPPULLUPS)
   // fine endstop settings: Individual pullups. will be ignored if ENDSTOPPULLUPS is defined
@@ -695,9 +695,12 @@
 // @section machine
 
 // Invert the stepper direction. Change (or reverse the motor connector) if an axis goes the wrong way.
-#define INVERT_X_DIR false
-#define INVERT_Y_DIR false
-#define INVERT_Z_DIR false
+// #define INVERT_X_DIR false
+// #define INVERT_Y_DIR false
+// #define INVERT_Z_DIR false
+#define INVERT_X_DIR true
+#define INVERT_Y_DIR true
+#define INVERT_Z_DIR true
 
 // @section extruder
 
@@ -850,7 +853,10 @@
 // #define MANUAL_Z_HOME_POS 300 // Distance between the nozzle to printbed after homing
 // #define MANUAL_Z_HOME_POS 365 // Distance between the nozzle to printbed after homing
 // #define MANUAL_Z_HOME_POS 372.3// Distance between the nozzle to printbed after homing
-#define MANUAL_Z_HOME_POS 370.3// Distance between the nozzle to printbed after homing
+// #define MANUAL_Z_HOME_POS 370.3// Distance between the nozzle to printbed after homing
+
+#define MANUAL_Z_HOME_POS 900// Distance between the nozzle to printbed after homing
+
 
 // Use "Z Safe Homing" to avoid homing with a Z probe outside the bed area.
 //
@@ -869,15 +875,18 @@
 
 
 // Delta only homes to Z
-#define HOMING_FEEDRATE_Z  (50*60)
+// #define HOMING_FEEDRATE_Z  (50*60)
+#define HOMING_FEEDRATE_Z  (5*60)
 
 //
 // MOVEMENT SETTINGS
 // @section motion
 //
 
-#define XYZ_FULL_STEPS_PER_ROTATION 200
-#define XYZ_MICROSTEPS 8 
+#define XYZ_FULL_STEPS_PER_ROTATION 1000
+// #define XYZ_FULL_STEPS_PER_ROTATION 200
+#define XYZ_MICROSTEPS 1 
+// #define XYZ_MICROSTEPS 8 
 // #define XYZ_MICROSTEPS 16
 #define XYZ_BELT_PITCH 1
 #define XYZ_PULLEY_TEETH 12
@@ -886,12 +895,12 @@
 // default settings
 // delta speeds must be the same on xyz
 #define DEFAULT_AXIS_STEPS_PER_UNIT   {XYZ_STEPS, XYZ_STEPS, XYZ_STEPS, 184.8}
-#define DEFAULT_MAX_FEEDRATE          {2000, 2000, 2000, 2000}    // (mm/sec)
-#define DEFAULT_MAX_ACCELERATION      {900,900,900,900}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
+#define DEFAULT_MAX_FEEDRATE          {200, 200, 200, 200}    // (mm/sec)
+#define DEFAULT_MAX_ACCELERATION      {90,90,90,90}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
 
-#define DEFAULT_ACCELERATION          300    // X, Y, Z and E acceleration in mm/s^2 for printing moves
-#define DEFAULT_RETRACT_ACCELERATION  300    // E acceleration in mm/s^2 for retracts
-#define DEFAULT_TRAVEL_ACCELERATION   300    // X, Y, Z acceleration in mm/s^2 for travel (non printing) moves
+#define DEFAULT_ACCELERATION          30    // X, Y, Z and E acceleration in mm/s^2 for printing moves
+#define DEFAULT_RETRACT_ACCELERATION  30    // E acceleration in mm/s^2 for retracts
+#define DEFAULT_TRAVEL_ACCELERATION   30    // X, Y, Z acceleration in mm/s^2 for travel (non printing) moves
 
 // The speed change that does not require acceleration (i.e. the software might assume it can be done instantaneously)
 #define DEFAULT_XYJERK                5.0    // (mm/sec)
