@@ -418,13 +418,15 @@
   // NOTE NB all values for DELTA_* values MUST be floating point, so always have a decimal point in them
 
   // Center-to-center distance of the holes in the diagonal push rods.
-  #define DELTA_DIAGONAL_ROD 477.5 // mm
+  #define DELTA_DIAGONAL_ROD 476.8 // mm
 
   // Horizontal offset from middle of printer to smooth rod center.
   // #define DELTA_SMOOTH_ROD_OFFSET 431.5 // mm
   // #define DELTA_SMOOTH_ROD_OFFSET 436.5 // mm
+  //#define DELTA_DIAGONAL_ROD 477.5 // mm
 //true
-  #define DELTA_SMOOTH_ROD_OFFSET 478.5 // mm
+  #define DELTA_SMOOTH_ROD_OFFSET 474.5 // mm
+  //#define DELTA_SMOOTH_ROD_OFFSET 478.5 // mm
 //
   // #define DELTA_SMOOTH_ROD_OFFSET 446.5 // mm
 
@@ -435,7 +437,9 @@
   // #define DELTA_CARRIAGE_OFFSET 68.3 // mm
   // #define DELTA_CARRIAGE_OFFSET 68.8 // mm
 //true
-  #define DELTA_CARRIAGE_OFFSET 41.8 // mm
+  #define DELTA_CARRIAGE_OFFSET 42 // mm
+  //#define DELTA_CARRIAGE_OFFSET 41.8 // mm
+  //#define DELTA_CARRIAGE_OFFSET 39 // mm
 //median
   // #define DELTA_CARRIAGE_OFFSET 69.8 // mm
   // #define DELTA_CARRIAGE_OFFSET 71.3 // mm
@@ -722,7 +726,7 @@
 #define Y_HOME_DIR 1
 #define Z_HOME_DIR 1
 
-#define min_software_endstops false// If true, axis won't move to coordinates less than HOME_POS.
+#define min_software_endstops true// If true, axis won't move to coordinates less than HOME_POS.
 #define max_software_endstops true  // If true, axis won't move to coordinates greater than the defined lengths below.
 
 // @section machine
@@ -855,7 +859,7 @@
 // #define MANUAL_Z_HOME_POS 372.3// Distance between the nozzle to printbed after homing
 // #define MANUAL_Z_HOME_POS 370.3// Distance between the nozzle to printbed after homing
 
-#define MANUAL_Z_HOME_POS 900// Distance between the nozzle to printbed after homing
+#define MANUAL_Z_HOME_POS 627// Distance between the nozzle to printbed after homing
 
 
 // Use "Z Safe Homing" to avoid homing with a Z probe outside the bed area.
@@ -876,7 +880,7 @@
 
 // Delta only homes to Z
 // #define HOMING_FEEDRATE_Z  (50*60)
-#define HOMING_FEEDRATE_Z  (5*60)
+#define HOMING_FEEDRATE_Z  (50*60)
 
 //
 // MOVEMENT SETTINGS
@@ -895,12 +899,12 @@
 // default settings
 // delta speeds must be the same on xyz
 #define DEFAULT_AXIS_STEPS_PER_UNIT   {XYZ_STEPS, XYZ_STEPS, XYZ_STEPS, 184.8}
-#define DEFAULT_MAX_FEEDRATE          {200, 200, 200, 200}    // (mm/sec)
-#define DEFAULT_MAX_ACCELERATION      {90,90,90,90}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
+#define DEFAULT_MAX_FEEDRATE          {2000, 2000, 2000, 2000}    // (mm/sec)
+#define DEFAULT_MAX_ACCELERATION      {900,900,900,900}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
 
-#define DEFAULT_ACCELERATION          30    // X, Y, Z and E acceleration in mm/s^2 for printing moves
-#define DEFAULT_RETRACT_ACCELERATION  30    // E acceleration in mm/s^2 for retracts
-#define DEFAULT_TRAVEL_ACCELERATION   30    // X, Y, Z acceleration in mm/s^2 for travel (non printing) moves
+#define DEFAULT_ACCELERATION          300    // X, Y, Z and E acceleration in mm/s^2 for printing moves
+#define DEFAULT_RETRACT_ACCELERATION  300    // E acceleration in mm/s^2 for retracts
+#define DEFAULT_TRAVEL_ACCELERATION   300    // X, Y, Z acceleration in mm/s^2 for travel (non printing) moves
 
 // The speed change that does not require acceleration (i.e. the software might assume it can be done instantaneously)
 #define DEFAULT_XYJERK                5.0    // (mm/sec)
