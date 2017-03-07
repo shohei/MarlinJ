@@ -2689,6 +2689,37 @@ inline void gcode_G0_G1() {
 }
 
 /**
+ * G111: Coordinated movement of X Y Z E axes, for calibration
+ */
+inline void gcode_G111() {
+  if (IsRunning()) {
+    gcode_get_destination(); // For X Y Z E F
+
+    #if ENABLED(FWRETRACT)
+
+      if (autoretract_enabled && !(code_seen('X') || code_seen('Y') || code_seen('Z')) && code_seen('E')) {
+        float echange = destination[E_AXIS] - current_position[E_AXIS];
+        // Is this move an attempt to retract or recover?
+        if ((echange < -MIN_RETRACT && !retracted[active_extruder]) || (echange > MIN_RETRACT && retracted[active_extruder])) {
+          current_position[E_AXIS] = destination[E_AXIS]; // hide the slicer-generated retract/recover from calculations
+          sync_plan_position_e();  // AND from the planner
+          retract(!retracted[active_extruder]);
+          return;
+        }
+      }
+
+    #endif //FWRETRACT
+
+    float __distance = sqrt(sq(destination[X_AXIS]-current_position[X_AXIS])+sq(destination[Y_AXIS]-current_position[Y_AXIS]));
+    float __feedrate_mm_s = feedrate_mm_m / 60.0;
+    float __time =  __distance / __feedrate_mm_s;
+    SERIAL_ECHOPGM("WAIT,");SERIAL_ECHOLN(__time);
+
+    prepare_move_to_destination();
+  }
+}
+
+/**
  * G2: Clockwise Arc
  * G3: Counterclockwise Arc
  */
@@ -7053,6 +7084,11 @@ void process_next_command() {
       case 0:
       case 1:
         gcode_G0_G1();
+        break;
+
+      // G111
+      case 111:
+        gcode_G111();
         break;
 
       // G2, G3
