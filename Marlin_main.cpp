@@ -2710,11 +2710,6 @@ inline void gcode_G111() {
 
     #endif //FWRETRACT
 
-    float __distance = sqrt(sq(destination[X_AXIS]-current_position[X_AXIS])+sq(destination[Y_AXIS]-current_position[Y_AXIS]));
-    float __feedrate_mm_s = feedrate_mm_m / 60.0;
-    float __time =  __distance / __feedrate_mm_s;
-    SERIAL_ECHOPGM("WAIT,");SERIAL_ECHOLN(__time);
-
     prepare_move_to_destination();
   }
 }
