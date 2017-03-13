@@ -466,14 +466,18 @@ static uint8_t target_extruder;
   float endstop_adj[3] = { 0 };
   // these are the default values, can be overriden with M665
   float delta_radius = DELTA_RADIUS;
+
+ float delta_radius_trim_tower_1 = DELTA_RADIUS_TRIM_TOWER_1;
+ float delta_radius_trim_tower_2 = DELTA_RADIUS_TRIM_TOWER_2;
+ float delta_radius_trim_tower_3 = DELTA_RADIUS_TRIM_TOWER_3;
   // float delta_tower1_x = -SIN_60 * (delta_radius + DELTA_RADIUS_TRIM_TOWER_1); // front left tower
-  float delta_tower1_x = SIN_60 * (delta_radius + DELTA_RADIUS_TRIM_TOWER_1); // front left tower
-  float delta_tower1_y = -COS_60 * (delta_radius + DELTA_RADIUS_TRIM_TOWER_1);
+  float delta_tower1_x = SIN_60 * (delta_radius + delta_radius_trim_tower_1); // front left tower
+  float delta_tower1_y = -COS_60 * (delta_radius + delta_radius_trim_tower_1);
   // float delta_tower2_x =  SIN_60 * (delta_radius + DELTA_RADIUS_TRIM_TOWER_2); // front right tower
-  float delta_tower2_x = -SIN_60 * (delta_radius + DELTA_RADIUS_TRIM_TOWER_2); // front right tower
-  float delta_tower2_y = -COS_60 * (delta_radius + DELTA_RADIUS_TRIM_TOWER_2);
+  float delta_tower2_x = -SIN_60 * (delta_radius + delta_radius_trim_tower_2); // front right tower
+  float delta_tower2_y = -COS_60 * (delta_radius + delta_radius_trim_tower_2);
   float delta_tower3_x = 0;                                                    // back middle tower
-  float delta_tower3_y = (delta_radius + DELTA_RADIUS_TRIM_TOWER_3);
+  float delta_tower3_y = (delta_radius + delta_radius_trim_tower_3);
   float delta_diagonal_rod = DELTA_DIAGONAL_ROD;
   float delta_diagonal_rod_trim_tower_1 = DELTA_DIAGONAL_ROD_TRIM_TOWER_1;
   float delta_diagonal_rod_trim_tower_2 = DELTA_DIAGONAL_ROD_TRIM_TOWER_2;
@@ -5461,6 +5465,11 @@ inline void gcode_M206() {
     if (code_seen('A')) delta_diagonal_rod_trim_tower_1 = code_value_linear_units();
     if (code_seen('B')) delta_diagonal_rod_trim_tower_2 = code_value_linear_units();
     if (code_seen('C')) delta_diagonal_rod_trim_tower_3 = code_value_linear_units();
+
+    if (code_seen('P')) delta_diagonal_rod_trim_tower_1 = code_value_float();
+    if (code_seen('Q')) delta_diagonal_rod_trim_tower_2 = code_value_float();
+    if (code_seen('R')) delta_diagonal_rod_trim_tower_3 = code_value_float();
+
     recalc_delta_settings(delta_radius, delta_diagonal_rod);
   }
   /**
@@ -7808,12 +7817,12 @@ void clamp_to_software_endstops(float target[3]) {
 #if ENABLED(DELTA)
 
   void recalc_delta_settings(float radius, float diagonal_rod) {
-    delta_tower1_x = -SIN_60 * (radius + DELTA_RADIUS_TRIM_TOWER_1);  // front left tower
-    delta_tower1_y = -COS_60 * (radius + DELTA_RADIUS_TRIM_TOWER_1);
-    delta_tower2_x =  SIN_60 * (radius + DELTA_RADIUS_TRIM_TOWER_2);  // front right tower
-    delta_tower2_y = -COS_60 * (radius + DELTA_RADIUS_TRIM_TOWER_2);
+    delta_tower1_x = -SIN_60 * (radius + delta_radius_trim_tower_1);  // front left tower
+    delta_tower1_y = -COS_60 * (radius + delta_radius_trim_tower_1);
+    delta_tower2_x =  SIN_60 * (radius + delta_radius_trim_tower_2);  // front right tower
+    delta_tower2_y = -COS_60 * (radius + delta_radius_trim_tower_2);
     delta_tower3_x = 0.0;                                             // back middle tower
-    delta_tower3_y = (radius + DELTA_RADIUS_TRIM_TOWER_3);
+    delta_tower3_y = (radius + delta_radius_trim_tower_3);
     delta_diagonal_rod_2_tower_1 = sq(diagonal_rod + delta_diagonal_rod_trim_tower_1);
     delta_diagonal_rod_2_tower_2 = sq(diagonal_rod + delta_diagonal_rod_trim_tower_2);
     delta_diagonal_rod_2_tower_3 = sq(diagonal_rod + delta_diagonal_rod_trim_tower_3);
