@@ -5466,9 +5466,9 @@ inline void gcode_M206() {
     if (code_seen('B')) delta_diagonal_rod_trim_tower_2 = code_value_linear_units();
     if (code_seen('C')) delta_diagonal_rod_trim_tower_3 = code_value_linear_units();
 
-    if (code_seen('P')) delta_diagonal_rod_trim_tower_1 = code_value_float();
-    if (code_seen('Q')) delta_diagonal_rod_trim_tower_2 = code_value_float();
-    if (code_seen('R')) delta_diagonal_rod_trim_tower_3 = code_value_float();
+    if (code_seen('O')) delta_diagonal_rod_trim_tower_1 = code_value_float();
+    if (code_seen('P')) delta_diagonal_rod_trim_tower_2 = code_value_float();
+    if (code_seen('Q')) delta_diagonal_rod_trim_tower_3 = code_value_float();
 
     recalc_delta_settings(delta_radius, delta_diagonal_rod);
   }
@@ -7849,7 +7849,7 @@ void clamp_to_software_endstops(float target[3]) {
                           - sq(delta_tower3_y - cartesian[Y_AXIS])
                          ) + cartesian[Z_AXIS];
     
-    /*
+    
     SERIAL_ECHOPGM("cartesian x="); SERIAL_ECHO(cartesian[X_AXIS]);
     SERIAL_ECHOPGM(" y="); SERIAL_ECHO(cartesian[Y_AXIS]);
     SERIAL_ECHOPGM(" z="); SERIAL_ECHOLN(cartesian[Z_AXIS]);
@@ -7857,7 +7857,7 @@ void clamp_to_software_endstops(float target[3]) {
     SERIAL_ECHOPGM("delta a="); SERIAL_ECHO(delta[TOWER_1]);
     SERIAL_ECHOPGM(" b="); SERIAL_ECHO(delta[TOWER_2]);
     SERIAL_ECHOPGM(" c="); SERIAL_ECHOLN(delta[TOWER_3]);
-    */
+    
      
   }
 
