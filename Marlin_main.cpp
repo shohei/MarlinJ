@@ -7850,13 +7850,13 @@ void clamp_to_software_endstops(float target[3]) {
                          ) + cartesian[Z_AXIS];
     
     
-    SERIAL_ECHOPGM("cartesian x="); SERIAL_ECHO(cartesian[X_AXIS]);
-    SERIAL_ECHOPGM(" y="); SERIAL_ECHO(cartesian[Y_AXIS]);
-    SERIAL_ECHOPGM(" z="); SERIAL_ECHOLN(cartesian[Z_AXIS]);
+    // SERIAL_ECHOPGM("cartesian x="); SERIAL_ECHO(cartesian[X_AXIS]);
+    // SERIAL_ECHOPGM(" y="); SERIAL_ECHO(cartesian[Y_AXIS]);
+    // SERIAL_ECHOPGM(" z="); SERIAL_ECHOLN(cartesian[Z_AXIS]);
 
-    SERIAL_ECHOPGM("delta a="); SERIAL_ECHO(delta[TOWER_1]);
-    SERIAL_ECHOPGM(" b="); SERIAL_ECHO(delta[TOWER_2]);
-    SERIAL_ECHOPGM(" c="); SERIAL_ECHOLN(delta[TOWER_3]);
+    // SERIAL_ECHOPGM("delta a="); SERIAL_ECHO(delta[TOWER_1]);
+    // SERIAL_ECHOPGM(" b="); SERIAL_ECHO(delta[TOWER_2]);
+    // SERIAL_ECHOPGM(" c="); SERIAL_ECHOLN(delta[TOWER_3]);
     
      
   }
