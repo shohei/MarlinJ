@@ -223,6 +223,9 @@ void stop_screw();
 void get_density();
 void get_extruded_width();
 void get_extruded_height();
+void set_heater_temperature();
+void set_needle_valve();
+void set_screw_speed();
 
 void enable_all_steppers();
 void disable_all_steppers();
@@ -232,6 +235,7 @@ void ok_to_send();
 
 void reset_bed_level();
 void kill(const char*);
+void external_kill();
 
 void quickstop_stepper();
 
