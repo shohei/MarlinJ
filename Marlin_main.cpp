@@ -88,6 +88,8 @@
   #include "twibus.h"
 #endif
 
+#include <Wire.h>
+#define I2C_ADDR 0x01
 /**
  * Look here for descriptions of G-codes:
  *  - http://linuxcnc.org/handbook/gcode/g-code.html
@@ -880,6 +882,7 @@ void setup() {
     disableStepperDrivers();
   #endif
 
+  Wire.begin();
   MYSERIAL.begin(BAUDRATE);
   SERIAL_PROTOCOLLNPGM("start");
   SERIAL_ECHO_START;
@@ -7734,6 +7737,10 @@ void process_next_command() {
         set_screw_speed();
         break; 
 
+      case 727:
+        CheckLRF();  
+        break;
+
       #if ENABLED(LIN_ADVANCE)
         case 905: // M905 Set advance factor.
           gcode_M905();
@@ -8183,6 +8190,27 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
 
 #if ENABLED(DELTA) || ENABLED(SCARA)
 
+  void CheckLRF(){
+    Wire.requestFrom(I2C_ADDR, 2);
+    uint8_t hbyte = Wire.read();
+    uint8_t lbyte = Wire.read();
+    int v_byte = (hbyte<<8) + lbyte;
+    SERIAL_ECHOPGM("h_byte: ");SERIAL_ECHOLN(hbyte);
+    SERIAL_ECHOPGM("l_byte: ");SERIAL_ECHOLN(lbyte);
+    SERIAL_ECHOPGM("v_byte: ");SERIAL_ECHOLN(v_byte);
+  }
+
+  void ComputeZError(){
+    //TODO:
+      // float distance = currentZ - sensorZ;
+  }
+
+  void UpdateZPosition(){
+    //execute G1 Z${distance}
+    // destination[Z_AXIS] = code_value_axis_units(Z_AXIS) + (axis_relative_modes[Z_AXIS] || relative_mode ? current_position[Z_AXIS] : 0);
+    // prepare_move_to_destination();//internally
+  }
+
   inline bool prepare_kinematic_move_to(float target[NUM_AXIS]) {
     float difference[NUM_AXIS];
     LOOP_XYZE(i) difference[i] = target[i] - current_position[i];
@@ -8221,9 +8249,16 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
       }else{
         planner.buffer_line2(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder, 0, fraction_time, do_extrude);
       }
+
+      if(s%10==1){
+        CheckLRF();
+        ComputeZError();
+        UpdateZPosition();
+      }
     }
     return true;
   }
+
 
 #endif // DELTA || SCARA
 
