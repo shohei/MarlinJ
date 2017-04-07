@@ -8195,9 +8195,7 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
     uint8_t hbyte = Wire.read();
     uint8_t lbyte = Wire.read();
     int v_byte = (hbyte<<8) + lbyte;
-    SERIAL_ECHOPGM("h_byte: ");SERIAL_ECHOLN(hbyte);
-    SERIAL_ECHOPGM("l_byte: ");SERIAL_ECHOLN(lbyte);
-    SERIAL_ECHOPGM("v_byte: ");SERIAL_ECHOLN(v_byte);
+    SERIAL_ECHOPGM("ADC from Nucleo: ");SERIAL_ECHOLN(v_byte);
   }
 
   void ComputeZError(){
