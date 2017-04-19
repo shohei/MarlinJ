@@ -8260,7 +8260,7 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
     return v_byte;
   }
 
-  void compensateZ(int adc_value_mV, float realtime_position[3]){
+  float compensateZ(int adc_value_mV, float realtime_position[3]){
     //compute Z (LRF coordinate)
     float machine_z = 0.08339 * adc_value_mV + 1.01182;
     float diffz = realtime_position[Z_AXIS] - machine_z; 
@@ -8293,9 +8293,14 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
 
     inverse_kinematics_temp(temp_destination);
     planner.buffer_line2(delta_temp[X_AXIS], delta_temp[Y_AXIS], delta_temp[Z_AXIS], destination[E_AXIS], _feedrate_mm_s, active_extruder, 1, fraction_time, 0);
+    return diffz;
+    // LOOP_XYZE(i)
+    //   current_position[i] = temp_destination[i];
+    // set_current_to_destination();
   }
 
   inline bool prepare_kinematic_move_to(float target[NUM_AXIS]) {
+
     float difference[NUM_AXIS];
     LOOP_XYZE(i) difference[i] = target[i] - current_position[i];
 
@@ -8342,7 +8347,8 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
       if(s%10==1){
         if(difference[X_AXIS]!=0||difference[Y_AXIS]!=0){
           int adc_value = CheckLRF();
-          compensateZ(adc_value,realtime_position);
+          float diffz = compensateZ(adc_value,realtime_position);
+          // current_position[Z_AXIS] = current_position[Z_AXIS] - diffz;
         }
       }
     }
