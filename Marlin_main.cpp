@@ -462,6 +462,7 @@ static uint8_t target_extruder;
   #define TOWER_3 Z_AXIS
 
   float delta[3];
+  float delta_temp[3];
   float cartesian_position[3] = { 0 };
   #define SIN_60 0.8660254037844386
   #define COS_60 0.5
@@ -7741,6 +7742,10 @@ void process_next_command() {
         CheckLRF();  
         break;
 
+      case 728:
+        computeAverageADC();
+        break;
+
       #if ENABLED(LIN_ADVANCE)
         case 905: // M905 Set advance factor.
           gcode_M905();
@@ -7946,6 +7951,39 @@ void clamp_to_software_endstops(float target[3]) {
     delta_diagonal_rod_2_tower_1 = sq(diagonal_rod + delta_diagonal_rod_trim_tower_1);
     delta_diagonal_rod_2_tower_2 = sq(diagonal_rod + delta_diagonal_rod_trim_tower_2);
     delta_diagonal_rod_2_tower_3 = sq(diagonal_rod + delta_diagonal_rod_trim_tower_3);
+  }
+
+  void inverse_kinematics_temp(const float in_cartesian[3]) {
+
+    const float cartesian[3] = {
+      RAW_X_POSITION(in_cartesian[X_AXIS]),
+      RAW_Y_POSITION(in_cartesian[Y_AXIS]),
+      RAW_Z_POSITION(in_cartesian[Z_AXIS])
+    };
+
+    delta_temp[TOWER_1] = sqrt(delta_diagonal_rod_2_tower_1
+                          - sq(delta_tower1_x - cartesian[X_AXIS])
+                          - sq(delta_tower1_y - cartesian[Y_AXIS])
+                         ) + cartesian[Z_AXIS];
+    delta_temp[TOWER_2] = sqrt(delta_diagonal_rod_2_tower_2
+                          - sq(delta_tower2_x - cartesian[X_AXIS])
+                          - sq(delta_tower2_y - cartesian[Y_AXIS])
+                         ) + cartesian[Z_AXIS];
+    delta_temp[TOWER_3] = sqrt(delta_diagonal_rod_2_tower_3
+                          - sq(delta_tower3_x - cartesian[X_AXIS])
+                          - sq(delta_tower3_y - cartesian[Y_AXIS])
+                         ) + cartesian[Z_AXIS];
+    
+    
+    // SERIAL_ECHOPGM("cartesian x="); SERIAL_ECHO(cartesian[X_AXIS]);
+    // SERIAL_ECHOPGM(" y="); SERIAL_ECHO(cartesian[Y_AXIS]);
+    // SERIAL_ECHOPGM(" z="); SERIAL_ECHOLN(cartesian[Z_AXIS]);
+
+    // SERIAL_ECHOPGM("delta a="); SERIAL_ECHO(delta[TOWER_1]);
+    // SERIAL_ECHOPGM(" b="); SERIAL_ECHO(delta[TOWER_2]);
+    // SERIAL_ECHOPGM(" c="); SERIAL_ECHOLN(delta[TOWER_3]);
+    
+     
   }
 
   void inverse_kinematics(const float in_cartesian[3]) {
@@ -8190,23 +8228,71 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
 
 #if ENABLED(DELTA) || ENABLED(SCARA)
 
-  void CheckLRF(){
+  void computeAverageADC(){
+    long sum = 0;
+    int total_count = 30;
+    for (int i=0;i<total_count;i++){
+      Wire.requestFrom(I2C_ADDR, 2);
+      uint8_t hbyte = Wire.read();
+      uint8_t lbyte = Wire.read();
+      int v_byte = (hbyte<<8) + lbyte;
+      SERIAL_ECHOPGM("[");
+      SERIAL_ECHO(i);
+      SERIAL_ECHOPGM("] , ADC from Nucleo: ");SERIAL_ECHOLN(v_byte);
+      if(v_byte){
+        sum += v_byte;
+      }
+      delay(10);
+    }
+    int ave = (int) (sum / float(total_count));
+    SERIAL_ECHOLNPGM("*****************");
+    SERIAL_ECHOPGM("Average ADC: ");SERIAL_ECHOLN(ave);
+    SERIAL_ECHOLNPGM("*****************");
+  }
+
+  int CheckLRF(){
+    //get sensor value via I2C
     Wire.requestFrom(I2C_ADDR, 2);
     uint8_t hbyte = Wire.read();
     uint8_t lbyte = Wire.read();
     int v_byte = (hbyte<<8) + lbyte;
     SERIAL_ECHOPGM("ADC from Nucleo: ");SERIAL_ECHOLN(v_byte);
+    return v_byte;
   }
 
-  void ComputeZError(){
-    //TODO:
-      // float distance = currentZ - sensorZ;
-  }
+  void compensateZ(int adc_value_mV, float realtime_position[3]){
+    //compute Z (LRF coordinate)
+    float machine_z = 0.08339 * adc_value_mV + 1.01182;
+    float diffz = realtime_position[Z_AXIS] - machine_z; 
+    // SERIAL_ECHOPGM("adc: ");SERIAL_ECHOLN(adc_value_mV);
+    // SERIAL_ECHOPGM("machine Z: ");SERIAL_ECHOLN(machine_z);
+    // SERIAL_ECHOPGM("current_positon[Z_AXIS]: ");SERIAL_ECHOLN(realtime_z_position);
+    SERIAL_ECHOPGM("compensate z: ");SERIAL_ECHOLN(diffz);
+    // SERIAL_ECHOPGM("target z: ");
+    // SERIAL_ECHO(lrf_z);
+    // SERIAL_ECHOPGM(", true z: ");
+    // SERIAL_ECHO(machine_z);
+    // SERIAL_ECHOPGM(", diff z: ");
+    // SERIAL_ECHOLN(diffz);
+    //update z position
 
-  void UpdateZPosition(){
-    //execute G1 Z${distance}
-    // destination[Z_AXIS] = code_value_axis_units(Z_AXIS) + (axis_relative_modes[Z_AXIS] || relative_mode ? current_position[Z_AXIS] : 0);
-    // prepare_move_to_destination();//internally
+    float temp_destination[3];
+    LOOP_XYZE(i) {
+      if (i==Z_AXIS)
+        temp_destination[i] = realtime_position[i] + diffz;
+      else
+        temp_destination[i] = realtime_position[i];
+    }
+
+    float cartesian_mm = fabs(diffz);
+    float _feedrate_mm_s = MMM_TO_MMS_SCALED(feedrate_mm_m);
+    float seconds = cartesian_mm / _feedrate_mm_s;
+    int steps = max(1, int(delta_segments_per_second * seconds));
+    float fraction_time = seconds/steps;
+    bool do_extrude = 0;
+
+    inverse_kinematics_temp(temp_destination);
+    planner.buffer_line2(delta_temp[X_AXIS], delta_temp[Y_AXIS], delta_temp[Z_AXIS], destination[E_AXIS], _feedrate_mm_s, active_extruder, 1, fraction_time, 0);
   }
 
   inline bool prepare_kinematic_move_to(float target[NUM_AXIS]) {
@@ -8226,12 +8312,17 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
     // SERIAL_ECHOPGM(" seconds="); SERIAL_ECHO(seconds);
     SERIAL_ECHOPGM(" steps="); SERIAL_ECHOLN(steps);
 
+    float realtime_position[3];
     for (int s = 1; s <= steps; s++) {
 
       float fraction = float(s) * inv_steps;
 
       LOOP_XYZE(i)
         target[i] = current_position[i] + difference[i] * fraction;
+
+      float fraction2 = float(s-1) * inv_steps; 
+      LOOP_XYZE(i)
+        realtime_position[i] = current_position[i] + difference[i] * fraction;
 
       inverse_kinematics(target);
 
@@ -8249,9 +8340,10 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
       }
 
       if(s%10==1){
-        CheckLRF();
-        ComputeZError();
-        UpdateZPosition();
+        if(difference[X_AXIS]!=0||difference[Y_AXIS]!=0){
+          int adc_value = CheckLRF();
+          compensateZ(adc_value,realtime_position);
+        }
       }
     }
     return true;
