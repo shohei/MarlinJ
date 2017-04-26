@@ -406,7 +406,8 @@ inline void do_blocking_move_to_x(float x, float fr_mm_m=0.0);
 inline void do_blocking_move_to_z(float z, float fr_mm_m=0.0);
 inline void do_blocking_move_to_xy(float x, float y, float fr_mm_m=0.0);
 
-int CheckLRF();
+void inject_gcode_command(char* inject_cmd);
+int checkLRF();
 void computeAverageADC();
 
 #endif //MARLIN_H
