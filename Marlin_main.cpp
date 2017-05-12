@@ -64,6 +64,8 @@
 #include "duration_t.h"
 #include "types.h"
 
+#include <TimerFour.h>
+
 #include <Adafruit_ADS1015.h>
 
 #if ENABLED(USE_WATCHDOG)
@@ -496,6 +498,7 @@ static uint8_t target_extruder;
   float delta_diagonal_rod_2_tower_3 = sq(delta_diagonal_rod + delta_diagonal_rod_trim_tower_3);
   float delta_segments_per_second = DELTA_SEGMENTS_PER_SECOND;
   float delta_clip_start_height = Z_MAX_POS;
+  int timer4_interrupt_counter = 0;
   #if ENABLED(AUTO_BED_LEVELING_FEATURE)
     int delta_grid_spacing[2] = { 0, 0 };
     float bed_level[AUTO_BED_LEVELING_GRID_POINTS][AUTO_BED_LEVELING_GRID_POINTS];
@@ -1013,6 +1016,9 @@ void setup() {
   pref->extruded_width = EXTRUDED_WIDTH;
   pref->extruded_height = EXTRUDED_HEIGHT;
   pref->density = DENSITY;
+
+  unsigned long period = 20000000L; //20 seconds = 1min.
+  // Timer4.initialize(period);//microseconds
 }
 
 /**
@@ -8296,51 +8302,64 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
   }
 
   void computeRegressionCoef(){
-    int sampleHeights[7] = {0,50,100,150,200,250,300};
-    char commands[7][10] = {"G1 Z0","G1 Z50","G1 Z100","G1 Z150","G1 200","G1 250","G1 Z300"}; 
-
-    int samples[7][2];
-    //samples=[[Z1,mV1],[Z2,mV2],...,[Z7,mV7]]を取得
-    for(int i=0;i<7;i++){
-      char *cmd = commands[i];
-      _enqueuecommand(cmd,true);
-
-      delay(5000);//wait for movement
-
-      samples[i][1] = sampleHeights[i];
-      samples[i][2] = computeAverageADC();
-    }
-
-    //正規方程式を解いて、回帰係数を求める
-    float sxx = 0;
-    float sxy = 0;
-    float sy = 0;
-    float sx = 0;
-    int N = 0;
-    for(int i=0;i<7;i++){
-      float x = samples[i][0];
-      float y = samples[i][1];
-      sxx = sxx + x*x;
-      sy = sy + y;
-      sxy = sxy + x*y;
-      sx = sx + x;
-      N = N +1;
-    }
-    float coef = (-sxy*N+sx*sy)/(sxx*N-sx*sx);
-    float intercept = (sx*sxy-sy*sxx)/(sxx*N-sx*sx);
-
-    SERIAL_ECHOPGM(coef);SERIAL_ECHOLN(coef);
-    SERIAL_ECHO_PGM(intercept);SERIAL_ECHOLN(intercept);
+    Timer4.attachInterrupt(doComputeRegressionCoef); // blinkLED to run every 0.15 seconds
   }
 
-  int16_t checkLRF(){
+  void doComputeRegressionCoef(){
+    int sampleHeights[7] = {0,50,100,150,200,250,300};
+    char commands[7][20] = {"G1 Z0 F2000","G1 Z50 F2000","G1 Z100 F2000","G1 Z150 F2000","G1 Z200 F2000","G1 Z250 F2000","G1 Z300 F2000"}; 
+    int samples[7][2];
+
+    SERIAL_ECHOPGM("timer3 counter: ");SERIAL_ECHOLN(timer4_interrupt_counter);
+
+    if(timer4_interrupt_counter<15){
+      if(timer4_interrupt_counter%2==0){
+        char *cmd = commands[timer4_interrupt_counter];
+        SERIAL_ECHOLN(cmd);
+        _enqueuecommand(cmd,true);
+      } else if(timer4_interrupt_counter%2==1){
+        SERIAL_ECHOLNPGM("getting ADC value");
+        int result = checkLRF(); 
+        SERIAL_ECHOPGM("result: ");SERIAL_ECHOLN(result);
+        samples[timer4_interrupt_counter/2+1][1] = sampleHeights[timer4_interrupt_counter/2+1];
+        samples[timer4_interrupt_counter/2+1][2] = result;
+      }
+    } else if(timer4_interrupt_counter==15){
+        //正規方程式を解いて、回帰係数を求める
+        float sxx = 0;
+        float sxy = 0;
+        float sy = 0;
+        float sx = 0;
+        int N = 0;
+        for(int i=0;i<7;i++){
+          float x = (float) samples[i][0];
+          float y = (float) samples[i][1];
+          sxx = sxx + x*x;
+          sy = sy + y;
+          sxy = sxy + x*y;
+          sx = sx + x;
+          N = N +1;
+        }
+        float coef = (-sxy*N+sx*sy)/(sxx*N-sx*sx);
+        float intercept = (sx*sxy-sy*sxx)/(sxx*N-sx*sx);
+
+        SERIAL_ECHOLNPGM("***Linear regression result***");
+        SERIAL_ECHOPGM("coef: ");SERIAL_ECHOLN(coef);
+        SERIAL_ECHOPGM("intercept: ");SERIAL_ECHOLN(intercept);
+
+        Timer4.stop();
+    }
+    timer4_interrupt_counter++;
+  }
+
+  int checkLRF(){
     //get sensor value via I2C
     // Wire.requestFrom(I2C_ADDR, 2);
     // uint8_t hbyte = Wire.read();
     // uint8_t lbyte = Wire.read();
     // int v_byte = (hbyte<<8) + lbyte;
     // SERIAL_ECHOPGM("ADC from Nucleo: ");SERIAL_ECHOLN(v_byte);
-    int16_t adc0;
+    int adc0;
     adc0 = ads.getLastConversionResults();
     SERIAL_ECHOPGM("ADC from ADS1115: ");SERIAL_ECHOLN(adc0);
 

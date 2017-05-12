@@ -406,8 +406,9 @@ inline void do_blocking_move_to_x(float x, float fr_mm_m=0.0);
 inline void do_blocking_move_to_z(float z, float fr_mm_m=0.0);
 inline void do_blocking_move_to_xy(float x, float y, float fr_mm_m=0.0);
 
-int16_t checkLRF();
+int checkLRF();
 int computeAverageADC();
 void computeRegressionCoef();
+void doComputeRegressionCoef();
 
 #endif //MARLIN_H
