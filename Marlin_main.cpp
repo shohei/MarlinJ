@@ -32,6 +32,7 @@
  *  - http://reprap.org/pipermail/reprap-dev/2011-May/003323.html
  */
 
+
 #include "Marlin.h"
 
 #if ENABLED(AUTO_BED_LEVELING_FEATURE)
@@ -62,6 +63,8 @@
 #include "nozzle.h"
 #include "duration_t.h"
 #include "types.h"
+
+#include <Adafruit_ADS1015.h>
 
 #if ENABLED(USE_WATCHDOG)
   #include "watchdog.h"
@@ -460,6 +463,8 @@ static uint8_t target_extruder;
   #define TOWER_1 X_AXIS
   #define TOWER_2 Y_AXIS
   #define TOWER_3 Z_AXIS
+
+  Adafruit_ADS1115 ads;
 
   float delta[3];
   float delta_temp[3];
@@ -887,6 +892,10 @@ void setup() {
   MYSERIAL.begin(BAUDRATE);
   SERIAL_PROTOCOLLNPGM("start");
   SERIAL_ECHO_START;
+
+  ads.setGain(GAIN_TWOTHIRDS); 
+  ads.begin();  
+  ads.startComparator_SingleEnded(0, 1000);
 
   Serial3.begin(115200);
   // Serial3.println("Serial3 initialized");
@@ -7076,10 +7085,10 @@ inline void gcode_T(uint8_t tmp_extruder) {
 void process_next_command() {
   current_command = command_queue[cmd_queue_index_r];
 
-  if (DEBUGGING(ECHO)) {
-    SERIAL_ECHO_START;
-    SERIAL_ECHOLN(current_command);
-  }
+  // if (DEBUGGING(ECHO)) {
+    // SERIAL_ECHO_START;
+    // SERIAL_ECHOLN(current_command);
+  // }
 
   // Sanitize the current command:
   //  - Skip leading spaces
@@ -7748,8 +7757,17 @@ void process_next_command() {
         break;
 
       case 729:
-        // inject_gcode_command("G28");
+        computeRegressionCoef();
         break;
+
+      case 730:
+        char *cmd;
+        cmd = "M731";
+        _enqueuecommand(cmd);
+        break;
+
+      case 731:
+        SERIAL_ECHOLNPGM("Hello, world");  
 
       #if ENABLED(LIN_ADVANCE)
         case 905: // M905 Set advance factor.
@@ -8233,12 +8251,6 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
 
 #if ENABLED(DELTA) || ENABLED(SCARA)
 
-  // void inject_gcode_command(char* inject_cmd){
-  //   cmd_queue_index_r = cmd_queue_index_r - 1;
-  //   command_queue[cmd_queue_index_r] = inject_cmd;
-  //   process_next_command(); 
-  // }
-
   void do_move_z_axis(int total_step, bool CW){
     //delay1.9us: 155cycle(NOP): 84MHz
     // #define _DELAY_1_9_US __asm__ __volatile__ ("nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"); 
@@ -8267,19 +8279,21 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
     // calculation: z[mm] / 0.012[mm/step] = total_pulse -> move_axis()
   }
 
-  void computeAverageADC(){
+  int computeAverageADC(){
     long sum = 0;
     int total_count = 30;
     for (int i=0;i<total_count;i++){
-      Wire.requestFrom(I2C_ADDR, 2);
-      uint8_t hbyte = Wire.read();
-      uint8_t lbyte = Wire.read();
-      int v_byte = (hbyte<<8) + lbyte;
+      int16_t adc0;
+      adc0 = ads.getLastConversionResults();
+      // Wire.requestFrom(I2C_ADDR, 2);
+      // uint8_t hbyte = Wire.read();
+      // uint8_t lbyte = Wire.read();
+      // int v_byte = (hbyte<<8) + lbyte;
       SERIAL_ECHOPGM("[");
       SERIAL_ECHO(i);
-      SERIAL_ECHOPGM("] , ADC from Nucleo: ");SERIAL_ECHOLN(v_byte);
-      if(v_byte){
-        sum += v_byte;
+      SERIAL_ECHOPGM("] , ADC from ADS1115: ");SERIAL_ECHOLN(adc0);
+      if(adc0){
+        sum += adc0;
       }
       delay(10);
     }
@@ -8287,21 +8301,56 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
     SERIAL_ECHOLNPGM("*****************");
     SERIAL_ECHOPGM("Average ADC: ");SERIAL_ECHOLN(ave);
     SERIAL_ECHOLNPGM("*****************");
+    return ave;
   }
 
-  int checkLRF(){
+  void computeRegressionCoef(){
+    //Z=(0,50,100,150,200,250,300)に移動して、そこの電圧値を取得する: 7点で値をサンプリング
+    //samples=[[Z1,mV1],[Z2,mV2],...,[Z7,mV7]]を取得
+
+    // float ave = (float) computeAverageADC();
+    float samples[][2] = {{0,10},{50,20},{100,30},{150,40},{200,50},{250,60},{300,70}};
+
+    //正規方程式を解いて、回帰係数を求める
+    float sxx = 0;
+    float sxy = 0;
+    float sy = 0;
+    float sx = 0;
+    int N = 0;
+    for(int i=0;i<7;i++){
+      float x = samples[i][0];
+      float y = samples[i][1];
+      sxx = sxx + x*x;
+      sy = sy + y;
+      sxy = sxy + x*y;
+      sx = sx + x;
+      N = N +1;
+    }
+    float coef = (-sxy*N+sx*sy)/(sxx*N-sx*sx);
+    float intercept = (sx*sxy-sy*sxx)/(sxx*N-sx*sx);
+  }
+
+  int16_t checkLRF(){
     //get sensor value via I2C
-    Wire.requestFrom(I2C_ADDR, 2);
-    uint8_t hbyte = Wire.read();
-    uint8_t lbyte = Wire.read();
-    int v_byte = (hbyte<<8) + lbyte;
-    SERIAL_ECHOPGM("ADC from Nucleo: ");SERIAL_ECHOLN(v_byte);
-    return v_byte;
+    // Wire.requestFrom(I2C_ADDR, 2);
+    // uint8_t hbyte = Wire.read();
+    // uint8_t lbyte = Wire.read();
+    // int v_byte = (hbyte<<8) + lbyte;
+    // SERIAL_ECHOPGM("ADC from Nucleo: ");SERIAL_ECHOLN(v_byte);
+    int16_t adc0;
+    adc0 = ads.getLastConversionResults();
+    SERIAL_ECHOPGM("ADC from ADS1115: ");SERIAL_ECHOLN(adc0);
+
+    return adc0;
   }
 
   float compensateZ(int adc_value_mV, float realtime_position[3]){
     //compute Z (LRF coordinate)
-    float machine_z = 0.08339 * adc_value_mV + 1.01182;
+    float coef = 1.01182;
+    float intercept = 0.08339;
+    // computeRegressionCoef();
+
+    float machine_z = (coef * adc_value_mV ) + intercept;
     float diffz = realtime_position[Z_AXIS] - machine_z; 
     // SERIAL_ECHOPGM("adc: ");SERIAL_ECHOLN(adc_value_mV);
     // SERIAL_ECHOPGM("machine Z: ");SERIAL_ECHOLN(machine_z);
@@ -8386,7 +8435,7 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
       if(s%10==1){
         if(difference[X_AXIS]!=0||difference[Y_AXIS]!=0){
           int adc_value = checkLRF();
-          float diffz = compensateZ(adc_value,realtime_position);
+          // float diffz = compensateZ(adc_value,realtime_position);
           // current_position[Z_AXIS] = current_position[Z_AXIS] - diffz;
         }
       }
