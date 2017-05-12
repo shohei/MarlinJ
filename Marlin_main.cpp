@@ -7760,15 +7760,6 @@ void process_next_command() {
         computeRegressionCoef();
         break;
 
-      case 730:
-        char *cmd;
-        cmd = "M731";
-        _enqueuecommand(cmd);
-        break;
-
-      case 731:
-        SERIAL_ECHOLNPGM("Hello, world");  
-
       #if ENABLED(LIN_ADVANCE)
         case 905: // M905 Set advance factor.
           gcode_M905();
@@ -8305,11 +8296,20 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
   }
 
   void computeRegressionCoef(){
-    //Z=(0,50,100,150,200,250,300)に移動して、そこの電圧値を取得する: 7点で値をサンプリング
-    //samples=[[Z1,mV1],[Z2,mV2],...,[Z7,mV7]]を取得
+    int sampleHeights[7] = {0,50,100,150,200,250,300};
+    char commands[7][10] = {"G1 Z0","G1 Z50","G1 Z100","G1 Z150","G1 200","G1 250","G1 Z300"}; 
 
-    // float ave = (float) computeAverageADC();
-    float samples[][2] = {{0,10},{50,20},{100,30},{150,40},{200,50},{250,60},{300,70}};
+    int samples[7][2];
+    //samples=[[Z1,mV1],[Z2,mV2],...,[Z7,mV7]]を取得
+    for(int i=0;i<7;i++){
+      char *cmd = commands[i];
+      _enqueuecommand(cmd,true);
+
+      delay(5000);//wait for movement
+
+      samples[i][1] = sampleHeights[i];
+      samples[i][2] = computeAverageADC();
+    }
 
     //正規方程式を解いて、回帰係数を求める
     float sxx = 0;
@@ -8328,6 +8328,9 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
     }
     float coef = (-sxy*N+sx*sy)/(sxx*N-sx*sx);
     float intercept = (sx*sxy-sy*sxx)/(sxx*N-sx*sx);
+
+    SERIAL_ECHOPGM(coef);SERIAL_ECHOLN(coef);
+    SERIAL_ECHO_PGM(intercept);SERIAL_ECHOLN(intercept);
   }
 
   int16_t checkLRF(){
