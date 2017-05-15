@@ -418,31 +418,28 @@
   // NOTE NB all values for DELTA_* values MUST be floating point, so always have a decimal point in them
 
   // Center-to-center distance of the holes in the diagonal push rods.
-  // #define DELTA_DIAGONAL_ROD 430.4 // mm
-  // #define DELTA_DIAGONAL_ROD 366.0 // mm
-  #define DELTA_DIAGONAL_ROD 366.0 // mm
-  // #define DELTA_DIAGONAL_ROD 366.1 // mm
+  #define DELTA_DIAGONAL_ROD 476.8 // mm
 
   // Horizontal offset from middle of printer to smooth rod center.
   // #define DELTA_SMOOTH_ROD_OFFSET 431.5 // mm
   // #define DELTA_SMOOTH_ROD_OFFSET 436.5 // mm
+  //#define DELTA_DIAGONAL_ROD 477.5 // mm
 //true
-  // #define DELTA_SMOOTH_ROD_OFFSET 441.5 // mm
-  #define DELTA_SMOOTH_ROD_OFFSET 441.5 // mm
+  #define DELTA_SMOOTH_ROD_OFFSET 474.5 // mm
+  //#define DELTA_SMOOTH_ROD_OFFSET 478.5 // mm
 //
   // #define DELTA_SMOOTH_ROD_OFFSET 446.5 // mm
 
   // Horizontal offset of the universal joints on the end effector.
-  // #define DELTA_EFFECTOR_OFFSET 219.3// mm
-  #define DELTA_EFFECTOR_OFFSET 217.7// mm
+  #define DELTA_EFFECTOR_OFFSET 190// mm
 
   // Horizontal offset of the universal joints on the carriages.
   // #define DELTA_CARRIAGE_OFFSET 68.3 // mm
   // #define DELTA_CARRIAGE_OFFSET 68.8 // mm
 //true
-  // #define DELTA_CARRIAGE_OFFSET 69.3 // mm
-  // #define DELTA_CARRIAGE_OFFSET (67.7-4) // mm
-  #define DELTA_CARRIAGE_OFFSET (67.7) // mm
+  #define DELTA_CARRIAGE_OFFSET 42 // mm
+  //#define DELTA_CARRIAGE_OFFSET 41.8 // mm
+  //#define DELTA_CARRIAGE_OFFSET 39 // mm
 //median
   // #define DELTA_CARRIAGE_OFFSET 69.8 // mm
   // #define DELTA_CARRIAGE_OFFSET 71.3 // mm
@@ -451,11 +448,13 @@
   // Horizontal distance bridged by diagonal push rods when effector is centered.
   // #define DELTA_RADIUS 152.9
   // #define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-(DELTA_EFFECTOR_OFFSET)-(DELTA_CARRIAGE_OFFSET))
-  #define DELTA_RADIUS 145
+  // #define DELTA_RADIUS 145
+  #define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-(DELTA_EFFECTOR_OFFSET)-(DELTA_CARRIAGE_OFFSET))
+
   // #define DELTA_RADIUS (156.1+1)
 
   // Print surface diameter/2 minus unreachable space (avoid collisions with vertical towers).
-  #define DELTA_PRINTABLE_RADIUS 150
+  #define DELTA_PRINTABLE_RADIUS 240 
 
   // Delta calibration menu
   // uncomment to add three points calibration menu option.
@@ -478,15 +477,15 @@
 // Specify here all the endstop connectors that are connected to any endstop or probe.
 // Almost all printers will be using one per axis. Probes will use one or more of the
 // extra connectors. Leave undefined any used for non-endstop and non-probe purposes.
-//#define USE_XMIN_PLUG
-//#define USE_YMIN_PLUG
+#define USE_XMIN_PLUG
+#define USE_YMIN_PLUG
 #define USE_ZMIN_PLUG // a Z probe
 #define USE_XMAX_PLUG
 #define USE_YMAX_PLUG
 #define USE_ZMAX_PLUG
 
 // coarse Endstop Settings
-#define ENDSTOPPULLUPS // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
+// #define ENDSTOPPULLUPS // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
 
 #if DISABLED(ENDSTOPPULLUPS)
   // fine endstop settings: Individual pullups. will be ignored if ENDSTOPPULLUPS is defined
@@ -704,9 +703,12 @@
 // @section machine
 
 // Invert the stepper direction. Change (or reverse the motor connector) if an axis goes the wrong way.
-#define INVERT_X_DIR false
-#define INVERT_Y_DIR false
-#define INVERT_Z_DIR false
+// #define INVERT_X_DIR false
+// #define INVERT_Y_DIR false
+// #define INVERT_Z_DIR false
+#define INVERT_X_DIR true
+#define INVERT_Y_DIR true
+#define INVERT_Z_DIR true
 
 // @section extruder
 
@@ -728,8 +730,8 @@
 #define Y_HOME_DIR 1
 #define Z_HOME_DIR 1
 
-#define min_software_endstops false// If true, axis won't move to coordinates less than HOME_POS.
-#define max_software_endstops true// If true, axis won't move to coordinates greater than the defined lengths below.
+#define min_software_endstops true// If true, axis won't move to coordinates less than HOME_POS.
+#define max_software_endstops true  // If true, axis won't move to coordinates greater than the defined lengths below.
 
 // @section machine
 
@@ -860,8 +862,10 @@
 // #define MANUAL_Z_HOME_POS 365 // Distance between the nozzle to printbed after homing
 // #define MANUAL_Z_HOME_POS 372.3// Distance between the nozzle to printbed after homing
 // #define MANUAL_Z_HOME_POS 370.3// Distance between the nozzle to printbed after homing
-// #define MANUAL_Z_HOME_POS 436.3// Distance between the nozzle to printbed after homing
-#define MANUAL_Z_HOME_POS 432.3// Distance between the nozzle to printbed after homing
+
+// #define MANUAL_Z_HOME_POS 627// Distance between the nozzle to printbed after homing
+#define MANUAL_Z_HOME_POS 375.5// Distance between the nozzle to printbed after homing
+
 
 // Use "Z Safe Homing" to avoid homing with a Z probe outside the bed area.
 //
@@ -880,6 +884,7 @@
 
 
 // Delta only homes to Z
+// #define HOMING_FEEDRATE_Z  (50*60)
 #define HOMING_FEEDRATE_Z  (50*60)
 
 //
@@ -887,9 +892,11 @@
 // @section motion
 //
 
-#define XYZ_FULL_STEPS_PER_ROTATION 200
-// #define XYZ_MICROSTEPS 1 
-#define XYZ_MICROSTEPS 16
+#define XYZ_FULL_STEPS_PER_ROTATION 1000
+// #define XYZ_FULL_STEPS_PER_ROTATION 200
+#define XYZ_MICROSTEPS 1 
+// #define XYZ_MICROSTEPS 8 
+// #define XYZ_MICROSTEPS 16
 #define XYZ_BELT_PITCH 1
 #define XYZ_PULLEY_TEETH 12
 #define XYZ_STEPS ((XYZ_FULL_STEPS_PER_ROTATION) * (XYZ_MICROSTEPS) / double(XYZ_BELT_PITCH) / double(XYZ_PULLEY_TEETH))
@@ -897,17 +904,12 @@
 // default settings
 // delta speeds must be the same on xyz
 #define DEFAULT_AXIS_STEPS_PER_UNIT   {XYZ_STEPS, XYZ_STEPS, XYZ_STEPS, 184.8}
-#define DEFAULT_MAX_FEEDRATE          {2000, 2000, 2000, 2000}    // (mm/sec)
-// #define DEFAULT_MAX_ACCELERATION      {900,900,900,900}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
-#define DEFAULT_MAX_ACCELERATION      {600,600,600,600}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
-// #define DEFAULT_MAX_ACCELERATION      {9000,9000,9000,9000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
+#define DEFAULT_MAX_FEEDRATE          {4000, 4000, 4000, 4000}    // (mm/sec)
+#define DEFAULT_MAX_ACCELERATION      {900,900,900,900}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
 
-#define DEFAULT_ACCELERATION          300    // X, Y, Z and E acceleration in mm/s^2 for printing moves
-#define DEFAULT_RETRACT_ACCELERATION  300    // E acceleration in mm/s^2 for retracts
-#define DEFAULT_TRAVEL_ACCELERATION   300    // X, Y, Z acceleration in mm/s^2 for travel (non printing) moves
-// #define DEFAULT_ACCELERATION          3000    // X, Y, Z and E acceleration in mm/s^2 for printing moves
-// #define DEFAULT_RETRACT_ACCELERATION  3000    // E acceleration in mm/s^2 for retracts
-// #define DEFAULT_TRAVEL_ACCELERATION   3000    // X, Y, Z acceleration in mm/s^2 for travel (non printing) moves
+#define DEFAULT_ACCELERATION          400    // X, Y, Z and E acceleration in mm/s^2 for printing moves
+#define DEFAULT_RETRACT_ACCELERATION  400    // E acceleration in mm/s^2 for retracts
+#define DEFAULT_TRAVEL_ACCELERATION   400    // X, Y, Z acceleration in mm/s^2 for travel (non printing) moves
 
 // The speed change that does not require acceleration (i.e. the software might assume it can be done instantaneously)
 #define DEFAULT_XYJERK                5.0    // (mm/sec)

@@ -32,6 +32,7 @@
  *  - http://reprap.org/pipermail/reprap-dev/2011-May/003323.html
  */
 
+
 #include "Marlin.h"
 
 #if ENABLED(AUTO_BED_LEVELING_FEATURE)
@@ -63,6 +64,10 @@
 #include "duration_t.h"
 #include "types.h"
 
+#include <TimerFour.h>
+
+#include <Adafruit_ADS1015.h>
+
 #if ENABLED(USE_WATCHDOG)
   #include "watchdog.h"
 #endif
@@ -88,6 +93,8 @@
   #include "twibus.h"
 #endif
 
+#include <Wire.h>
+#define I2C_ADDR 0x01
 /**
  * Look here for descriptions of G-codes:
  *  - http://linuxcnc.org/handbook/gcode/g-code.html
@@ -459,7 +466,10 @@ static uint8_t target_extruder;
   #define TOWER_2 Y_AXIS
   #define TOWER_3 Z_AXIS
 
+  Adafruit_ADS1115 ads;
+
   float delta[3];
+  float delta_temp[3];
   float cartesian_position[3] = { 0 };
   #define SIN_60 0.8660254037844386
   #define COS_60 0.5
@@ -467,14 +477,18 @@ static uint8_t target_extruder;
   float trim[3] = { 0 };
   // these are the default values, can be overriden with M665
   float delta_radius = DELTA_RADIUS;
+
+ float delta_radius_trim_tower_1 = DELTA_RADIUS_TRIM_TOWER_1;
+ float delta_radius_trim_tower_2 = DELTA_RADIUS_TRIM_TOWER_2;
+ float delta_radius_trim_tower_3 = DELTA_RADIUS_TRIM_TOWER_3;
   // float delta_tower1_x = -SIN_60 * (delta_radius + DELTA_RADIUS_TRIM_TOWER_1); // front left tower
-  float delta_tower1_x = SIN_60 * (delta_radius + DELTA_RADIUS_TRIM_TOWER_1); // front left tower
-  float delta_tower1_y = -COS_60 * (delta_radius + DELTA_RADIUS_TRIM_TOWER_1);
+  float delta_tower1_x = SIN_60 * (delta_radius + delta_radius_trim_tower_1); // front left tower
+  float delta_tower1_y = -COS_60 * (delta_radius + delta_radius_trim_tower_1);
   // float delta_tower2_x =  SIN_60 * (delta_radius + DELTA_RADIUS_TRIM_TOWER_2); // front right tower
-  float delta_tower2_x = -SIN_60 * (delta_radius + DELTA_RADIUS_TRIM_TOWER_2); // front right tower
-  float delta_tower2_y = -COS_60 * (delta_radius + DELTA_RADIUS_TRIM_TOWER_2);
+  float delta_tower2_x = -SIN_60 * (delta_radius + delta_radius_trim_tower_2); // front right tower
+  float delta_tower2_y = -COS_60 * (delta_radius + delta_radius_trim_tower_2);
   float delta_tower3_x = 0;                                                    // back middle tower
-  float delta_tower3_y = (delta_radius + DELTA_RADIUS_TRIM_TOWER_3);
+  float delta_tower3_y = (delta_radius + delta_radius_trim_tower_3);
   float delta_diagonal_rod = DELTA_DIAGONAL_ROD;
   float delta_diagonal_rod_trim_tower_1 = DELTA_DIAGONAL_ROD_TRIM_TOWER_1;
   float delta_diagonal_rod_trim_tower_2 = DELTA_DIAGONAL_ROD_TRIM_TOWER_2;
@@ -484,6 +498,7 @@ static uint8_t target_extruder;
   float delta_diagonal_rod_2_tower_3 = sq(delta_diagonal_rod + delta_diagonal_rod_trim_tower_3);
   float delta_segments_per_second = DELTA_SEGMENTS_PER_SECOND;
   float delta_clip_start_height = Z_MAX_POS;
+  int timer4_interrupt_counter = 0;
   #if ENABLED(AUTO_BED_LEVELING_FEATURE)
     int delta_grid_spacing[2] = { 0, 0 };
     float bed_level[AUTO_BED_LEVELING_GRID_POINTS][AUTO_BED_LEVELING_GRID_POINTS];
@@ -876,12 +891,21 @@ void setup() {
     disableStepperDrivers();
   #endif
 
+  Wire.begin();
   MYSERIAL.begin(BAUDRATE);
   SERIAL_PROTOCOLLNPGM("start");
   SERIAL_ECHO_START;
 
+  ads.setGain(GAIN_TWOTHIRDS); 
+  ads.begin();  
+  ads.startComparator_SingleEnded(0, 1000);
+
   Serial3.begin(115200);
   // Serial3.println("Serial3 initialized");
+  pinMode(EMERGENCY_OUT_PLC_PIN,OUTPUT);
+  digitalWrite(EMERGENCY_OUT_PLC_PIN,LOW);
+  pinMode(EMERGENCY_IN_PLC_PIN,INPUT);
+  attachInterrupt(EMERGENCY_IN_PLC_PIN,external_kill,CHANGE);
 
   // Check startup - does nothing if bootloader sets MCUSR to 0
   byte mcu = MCUSR;
@@ -992,6 +1016,9 @@ void setup() {
   pref->extruded_width = EXTRUDED_WIDTH;
   pref->extruded_height = EXTRUDED_HEIGHT;
   pref->density = DENSITY;
+
+  unsigned long period = 20000000L; //20 seconds = 1min.
+  // Timer4.initialize(period);//microseconds
 }
 
 /**
@@ -1188,6 +1215,7 @@ inline void get_serial_commands() {
     }
 
   } // queue has space, serial has data
+
 }
 
 #if ENABLED(SDSUPPORT)
@@ -2667,6 +2695,32 @@ void unknown_command_error() {
  * G0, G1: Coordinated movement of X Y Z E axes
  */
 inline void gcode_G0_G1() {
+  if (IsRunning()) {
+    gcode_get_destination(); // For X Y Z E F
+
+    #if ENABLED(FWRETRACT)
+
+      if (autoretract_enabled && !(code_seen('X') || code_seen('Y') || code_seen('Z')) && code_seen('E')) {
+        float echange = destination[E_AXIS] - current_position[E_AXIS];
+        // Is this move an attempt to retract or recover?
+        if ((echange < -MIN_RETRACT && !retracted[active_extruder]) || (echange > MIN_RETRACT && retracted[active_extruder])) {
+          current_position[E_AXIS] = destination[E_AXIS]; // hide the slicer-generated retract/recover from calculations
+          sync_plan_position_e();  // AND from the planner
+          retract(!retracted[active_extruder]);
+          return;
+        }
+      }
+
+    #endif //FWRETRACT
+
+    prepare_move_to_destination();
+  }
+}
+
+/**
+ * G111: Coordinated movement of X Y Z E axes, for calibration
+ */
+inline void gcode_G111() {
   if (IsRunning()) {
     gcode_get_destination(); // For X Y Z E F
 
@@ -5078,6 +5132,18 @@ inline void gcode_M81() {
   #endif
 }
 
+/**
+ * M73: Set build percentage 
+ */
+inline void gcode_M73() { 
+  if(code_seen('P')){
+    float _percentage = code_value_int();
+    if(_percentage==100){
+      //stop screw when printing finishes
+      Serial3.println("SNW,0"); 
+    }
+  }
+}
 
 /**
  * M82: Set E codes absolute (default)
@@ -5115,6 +5181,8 @@ inline void gcode_M18_M84() {
         }
       #endif
     }
+    //stop the screw when printing finishes
+    Serial3.println("SNW,0");
   }
 }
 
@@ -5436,6 +5504,11 @@ inline void gcode_M206() {
     if (code_seen('A')) delta_diagonal_rod_trim_tower_1 = code_value_linear_units();
     if (code_seen('B')) delta_diagonal_rod_trim_tower_2 = code_value_linear_units();
     if (code_seen('C')) delta_diagonal_rod_trim_tower_3 = code_value_linear_units();
+
+    if (code_seen('O')) delta_diagonal_rod_trim_tower_1 = code_value_float();
+    if (code_seen('P')) delta_diagonal_rod_trim_tower_2 = code_value_float();
+    if (code_seen('Q')) delta_diagonal_rod_trim_tower_3 = code_value_float();
+
     recalc_delta_settings(delta_radius, delta_diagonal_rod);
   }
   /**
@@ -7018,10 +7091,10 @@ inline void gcode_T(uint8_t tmp_extruder) {
 void process_next_command() {
   current_command = command_queue[cmd_queue_index_r];
 
-  if (DEBUGGING(ECHO)) {
-    SERIAL_ECHO_START;
-    SERIAL_ECHOLN(current_command);
-  }
+  // if (DEBUGGING(ECHO)) {
+    // SERIAL_ECHO_START;
+    // SERIAL_ECHOLN(current_command);
+  // }
 
   // Sanitize the current command:
   //  - Skip leading spaces
@@ -7072,6 +7145,11 @@ void process_next_command() {
       case 0:
       case 1:
         gcode_G0_G1();
+        break;
+
+      // G111
+      case 111:
+        gcode_G111();
         break;
 
       // G2, G3
@@ -7353,6 +7431,9 @@ void process_next_command() {
         gcode_M83();
         break;
       case 18: // (for compatibility)
+      case 73: //Set build percentage
+        gcode_M73();
+        break;
       case 84: // M84
         gcode_M18_M84();
         break;
@@ -7661,6 +7742,42 @@ void process_next_command() {
         get_extruded_height();
         break;
 
+      case 724:
+        set_heater_temperature();
+        break;
+
+      case 725:
+        set_needle_valve();
+        break;
+
+      case 726:
+        set_screw_speed();
+        break; 
+
+      case 727:
+        checkLRF();  
+        break;
+
+      case 728:
+        computeAverageADC();
+        break;
+
+      case 729:
+        displayCurrentError();
+        // computeRegressionCoef();
+        break;
+
+      case 730:
+        SERIAL_ECHOLNPGM("do move z+"); 
+        do_move_z_axis(100,true);
+        break;
+
+      case 731:
+        SERIAL_ECHOLNPGM("do move z-"); 
+        do_move_z_axis(100,false);
+        break;
+        
+
       #if ENABLED(LIN_ADVANCE)
         case 905: // M905 Set advance factor.
           gcode_M905();
@@ -7757,6 +7874,64 @@ void get_extruded_height(){
     }
 }
 
+void set_heater_temperature(){
+    float t_barrel_rear, t_barrel_middle, t_barrel_front,
+          t_manihold_top, t_manihold_bottom, t_nozzle;
+    t_barrel_rear=t_barrel_middle=t_barrel_front=t_manihold_top=t_manihold_bottom=t_nozzle=0;
+
+    if (code_seen('A')) {
+      t_barrel_rear = code_value_float();
+      Serial3.print("BbTW,");
+      Serial3.println(t_barrel_rear);
+    }
+    if (code_seen('B')) {
+      t_barrel_middle = code_value_float();
+      Serial3.print("BdTW,");
+      Serial3.println(t_barrel_middle);
+    }
+    if (code_seen('C')) {
+      t_barrel_front = code_value_float();
+      Serial3.print("BaTW,");
+      Serial3.println(t_barrel_front);
+    }
+    if (code_seen('D')) {
+      t_manihold_top = code_value_float();
+      Serial3.print("MhTW,");
+      Serial3.println(t_manihold_top);
+    }
+    if (code_seen('E')) {
+      t_manihold_bottom = code_value_float();
+      Serial3.print("MlTW,");
+      Serial3.println(t_manihold_bottom);
+    }
+    if (code_seen('F')) {
+      t_nozzle = code_value_float();
+      Serial3.print("NTW,");
+      Serial3.println(t_nozzle);
+    }
+}
+
+void set_needle_valve(){
+    if (code_seen('S')) {
+      int run_status = code_value_int();
+      if(run_status==0){
+        //close pin and screw
+        Serial3.println("SNW,0");
+      } else if(run_status==1){
+        //open pin only (no screw operation)
+        Serial3.println("NVW,1");
+      }
+    }
+}
+
+void set_screw_speed(){
+    if (code_seen('S')) {
+      float _snw = code_value_float();
+      Serial3.print("SNW,");
+      Serial3.println(_snw);
+    }
+}
+
 void FlushSerialRequestResend() {
   //char command_queue[cmd_queue_index_r][100]="Resend:";
   MYSERIAL.flush();
@@ -7799,15 +7974,48 @@ void clamp_to_software_endstops(float target[3]) {
 #if ENABLED(DELTA)
 
   void recalc_delta_settings(float radius, float diagonal_rod) {
-    delta_tower1_x = SIN_60 * (radius + DELTA_RADIUS_TRIM_TOWER_1);  // front left tower
-    delta_tower1_y = -COS_60 * (radius + DELTA_RADIUS_TRIM_TOWER_1);
-    delta_tower2_x = -SIN_60 * (radius + DELTA_RADIUS_TRIM_TOWER_2);  // front right tower
-    delta_tower2_y = -COS_60 * (radius + DELTA_RADIUS_TRIM_TOWER_2);
+    delta_tower1_x = -SIN_60 * (radius + delta_radius_trim_tower_1);  // front left tower
+    delta_tower1_y = -COS_60 * (radius + delta_radius_trim_tower_1);
+    delta_tower2_x =  SIN_60 * (radius + delta_radius_trim_tower_2);  // front right tower
+    delta_tower2_y = -COS_60 * (radius + delta_radius_trim_tower_2);
     delta_tower3_x = 0.0;                                             // back middle tower
-    delta_tower3_y = (radius + DELTA_RADIUS_TRIM_TOWER_3);
+    delta_tower3_y = (radius + delta_radius_trim_tower_3);
     delta_diagonal_rod_2_tower_1 = sq(diagonal_rod + delta_diagonal_rod_trim_tower_1);
     delta_diagonal_rod_2_tower_2 = sq(diagonal_rod + delta_diagonal_rod_trim_tower_2);
     delta_diagonal_rod_2_tower_3 = sq(diagonal_rod + delta_diagonal_rod_trim_tower_3);
+  }
+
+  void inverse_kinematics_temp(const float in_cartesian[3]) {
+
+    const float cartesian[3] = {
+      RAW_X_POSITION(in_cartesian[X_AXIS]),
+      RAW_Y_POSITION(in_cartesian[Y_AXIS]),
+      RAW_Z_POSITION(in_cartesian[Z_AXIS])
+    };
+
+    delta_temp[TOWER_1] = sqrt(delta_diagonal_rod_2_tower_1
+                          - sq(delta_tower1_x - cartesian[X_AXIS])
+                          - sq(delta_tower1_y - cartesian[Y_AXIS])
+                         ) + cartesian[Z_AXIS];
+    delta_temp[TOWER_2] = sqrt(delta_diagonal_rod_2_tower_2
+                          - sq(delta_tower2_x - cartesian[X_AXIS])
+                          - sq(delta_tower2_y - cartesian[Y_AXIS])
+                         ) + cartesian[Z_AXIS];
+    delta_temp[TOWER_3] = sqrt(delta_diagonal_rod_2_tower_3
+                          - sq(delta_tower3_x - cartesian[X_AXIS])
+                          - sq(delta_tower3_y - cartesian[Y_AXIS])
+                         ) + cartesian[Z_AXIS];
+    
+    
+    // SERIAL_ECHOPGM("cartesian x="); SERIAL_ECHO(cartesian[X_AXIS]);
+    // SERIAL_ECHOPGM(" y="); SERIAL_ECHO(cartesian[Y_AXIS]);
+    // SERIAL_ECHOPGM(" z="); SERIAL_ECHOLN(cartesian[Z_AXIS]);
+
+    // SERIAL_ECHOPGM("delta a="); SERIAL_ECHO(delta[TOWER_1]);
+    // SERIAL_ECHOPGM(" b="); SERIAL_ECHO(delta[TOWER_2]);
+    // SERIAL_ECHOPGM(" c="); SERIAL_ECHOLN(delta[TOWER_3]);
+    
+     
   }
 
   void inverse_kinematics(const float in_cartesian[3]) {
@@ -7831,15 +8039,15 @@ void clamp_to_software_endstops(float target[3]) {
                           - sq(delta_tower3_y - cartesian[Y_AXIS])
                          ) + cartesian[Z_AXIS];
     
-    /*
-    SERIAL_ECHOPGM("cartesian x="); SERIAL_ECHO(cartesian[X_AXIS]);
-    SERIAL_ECHOPGM(" y="); SERIAL_ECHO(cartesian[Y_AXIS]);
-    SERIAL_ECHOPGM(" z="); SERIAL_ECHOLN(cartesian[Z_AXIS]);
+    
+    // SERIAL_ECHOPGM("cartesian x="); SERIAL_ECHO(cartesian[X_AXIS]);
+    // SERIAL_ECHOPGM(" y="); SERIAL_ECHO(cartesian[Y_AXIS]);
+    // SERIAL_ECHOPGM(" z="); SERIAL_ECHOLN(cartesian[Z_AXIS]);
 
-    SERIAL_ECHOPGM("delta a="); SERIAL_ECHO(delta[TOWER_1]);
-    SERIAL_ECHOPGM(" b="); SERIAL_ECHO(delta[TOWER_2]);
-    SERIAL_ECHOPGM(" c="); SERIAL_ECHOLN(delta[TOWER_3]);
-    */
+    // SERIAL_ECHOPGM("delta a="); SERIAL_ECHO(delta[TOWER_1]);
+    // SERIAL_ECHOPGM(" b="); SERIAL_ECHO(delta[TOWER_2]);
+    // SERIAL_ECHOPGM(" c="); SERIAL_ECHOLN(delta[TOWER_3]);
+    
      
   }
 
@@ -8052,7 +8260,205 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
 
 #if ENABLED(DELTA) || ENABLED(SCARA)
 
+  void do_move_z_axis(int total_step, bool CW){
+    //delay1.9us: 155cycle(NOP): 84MHz
+    // #define _DELAY_1_9_US __asm__ __volatile__ ("nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\tnop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\tnop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"); 
+    //improved: delay1.9us: 147cycle(NOP): 84MHz: with IO writing overhead
+    // #define _DELAY_1_9_US __asm__ __volatile__ ("nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"); 
+    //delay1.9us for Arduino Mega (16MHz) 147/5 = 29cycle + res = 30cycle
+    // #define _DELAY_1_9_US __asm__ __volatile__ ("nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t");
+    CRITICAL_SECTION_START
+    cli();
+
+    int CUR_X_DIR = digitalRead(X_DIR_PIN);
+    int CUR_Y_DIR = digitalRead(Y_DIR_PIN);
+    int CUR_Z_DIR = digitalRead(Z_DIR_PIN);
+    WRITE(X_DIR_PIN,CW);
+    WRITE(Y_DIR_PIN,CW);
+    WRITE(Z_DIR_PIN,CW);
+    for (int i=0;i<total_step;i++){
+       WRITE(X_STEP_PIN,true);
+       WRITE(Y_STEP_PIN,true);
+       WRITE(Z_STEP_PIN,true);
+       // _DELAY_1_9_US;
+       delayMicroseconds(2);
+       WRITE(X_STEP_PIN,false);
+       WRITE(Y_STEP_PIN,false);
+       WRITE(Z_STEP_PIN,false);
+       delayMicroseconds(2);
+       // _DELAY_1_9_US;
+
+       delayMicroseconds(1500);
+    }
+
+    WRITE(X_DIR_PIN,CUR_X_DIR);
+    WRITE(Y_DIR_PIN,CUR_Y_DIR);
+    WRITE(Z_DIR_PIN,CUR_Z_DIR);
+    sei();
+    CRITICAL_SECTION_END
+  }
+
+  int computeAverageADC(){
+    long sum = 0;
+    int total_count = 30;
+    for (int i=0;i<total_count;i++){
+      int16_t adc0;
+      adc0 = ads.getLastConversionResults();
+      // Wire.requestFrom(I2C_ADDR, 2);
+      // uint8_t hbyte = Wire.read();
+      // uint8_t lbyte = Wire.read();
+      // int v_byte = (hbyte<<8) + lbyte;
+      SERIAL_ECHOPGM("[");
+      SERIAL_ECHO(i);
+      SERIAL_ECHOPGM("] , ADC from ADS1115: ");SERIAL_ECHOLN(adc0);
+      if(adc0){
+        sum += adc0;
+      }
+      delay(10);
+    }
+    int ave = (int) (sum / float(total_count));
+    SERIAL_ECHOLNPGM("*****************");
+    SERIAL_ECHOPGM("Average ADC: ");SERIAL_ECHOLN(ave);
+    SERIAL_ECHOLNPGM("*****************");
+    return ave;
+  }
+
+  void computeRegressionCoef(){
+    Timer4.attachInterrupt(doComputeRegressionCoef); // blinkLED to run every 0.15 seconds
+  }
+
+  void doComputeRegressionCoef(){
+    int sampleHeights[7] = {0,50,100,150,200,250,300};
+    char commands[7][20] = {"G1 Z0 F2000","G1 Z50 F2000","G1 Z100 F2000","G1 Z150 F2000","G1 Z200 F2000","G1 Z250 F2000","G1 Z300 F2000"}; 
+    int samples[7][2];
+
+    SERIAL_ECHOPGM("timer3 counter: ");SERIAL_ECHOLN(timer4_interrupt_counter);
+
+    if(timer4_interrupt_counter<15){
+      if(timer4_interrupt_counter%2==0){
+        char *cmd = commands[timer4_interrupt_counter];
+        SERIAL_ECHOLN(cmd);
+        _enqueuecommand(cmd,true);
+      } else if(timer4_interrupt_counter%2==1){
+        SERIAL_ECHOLNPGM("getting ADC value");
+        int result = checkLRF(); 
+        SERIAL_ECHOPGM("result: ");SERIAL_ECHOLN(result);
+        samples[timer4_interrupt_counter/2+1][1] = sampleHeights[timer4_interrupt_counter/2+1];
+        samples[timer4_interrupt_counter/2+1][2] = result;
+      }
+    } else if(timer4_interrupt_counter==15){
+        //正規方程式を解いて、回帰係数を求める
+        float sxx = 0;
+        float sxy = 0;
+        float sy = 0;
+        float sx = 0;
+        int N = 0;
+        for(int i=0;i<7;i++){
+          float x = (float) samples[i][0];
+          float y = (float) samples[i][1];
+          sxx = sxx + x*x;
+          sy = sy + y;
+          sxy = sxy + x*y;
+          sx = sx + x;
+          N = N +1;
+        }
+        float coef = (-sxy*N+sx*sy)/(sxx*N-sx*sx);
+        float intercept = (sx*sxy-sy*sxx)/(sxx*N-sx*sx);
+
+        SERIAL_ECHOLNPGM("***Linear regression result***");
+        SERIAL_ECHOPGM("coef: ");SERIAL_ECHOLN(coef);
+        SERIAL_ECHOPGM("intercept: ");SERIAL_ECHOLN(intercept);
+
+        Timer4.stop();
+    }
+    timer4_interrupt_counter++;
+  }
+
+  int checkLRF(){
+    //get sensor value via I2C
+    // Wire.requestFrom(I2C_ADDR, 2);
+    // uint8_t hbyte = Wire.read();
+    // uint8_t lbyte = Wire.read();
+    // int v_byte = (hbyte<<8) + lbyte;
+    // SERIAL_ECHOPGM("ADC from Nucleo: ");SERIAL_ECHOLN(v_byte);
+    int adc0;
+    adc0 = ads.getLastConversionResults();
+    SERIAL_ECHOPGM("ADC from ADS1115: ");SERIAL_ECHOLN(adc0);
+
+    return adc0;
+  }
+
+  void displayCurrentError(){
+    int adc_value_mV = checkLRF();
+    float coef = 0.01171;
+    float intercept = 9.47928;
+    float machine_z = (coef * adc_value_mV ) + intercept;
+    float diffz = current_position[Z_AXIS] - machine_z; 
+    SERIAL_ECHOPGM("current z error: ");SERIAL_ECHO(diffz);SERIAL_ECHOPGM("[mm]");
+  }
+
+  void compensateZ(int adc_value_mV, float realtime_position[3]){
+    //compute Z (LRF coordinate)
+    float coef = 0.01171;
+    float intercept = 9.47928;
+    // float coef = 1.01182;
+    // float intercept = 0.08339;
+
+    float machine_z = (coef * adc_value_mV ) + intercept;
+    float diffz = realtime_position[Z_AXIS] - machine_z; 
+    // SERIAL_ECHOPGM("adc: ");SERIAL_ECHOLN(adc_value_mV);
+    // SERIAL_ECHOPGM("machine Z: ");SERIAL_ECHOLN(machine_z);
+    // SERIAL_ECHOPGM("current_positon[Z_AXIS]: ");SERIAL_ECHOLN(realtime_z_position);
+    SERIAL_ECHOPGM("compensate z: ");SERIAL_ECHO(diffz);SERIAL_ECHOPGM("[mm]");
+
+    // 1pulseで何mm進むか？
+    // 1pulseで1/1000度回転する
+    // 1回転で12mm進む
+    // 1/1000回転で0.012mm進む
+    // : 1pulseで0.012進む
+    float mm_per_pulse = 0.012;
+    int totalstep = (int) (diffz / mm_per_pulse); 
+    SERIAL_ECHOPGM("total step: ");SERIAL_ECHO(totalstep);SERIAL_ECHOPGM("[step]");
+
+    if(totalstep>0){
+      do_move_z_axis(totalstep,false);
+    }else if(totalstep<0){
+      do_move_z_axis(totalstep,true);
+    }
+
+    // SERIAL_ECHOPGM("target z: ");
+    // SERIAL_ECHO(lrf_z);
+    // SERIAL_ECHOPGM(", true z: ");
+    // SERIAL_ECHO(machine_z);
+    // SERIAL_ECHOPGM(", diff z: ");
+    // SERIAL_ECHOLN(diffz);
+    //update z position
+
+    // float temp_destination[3];
+    // LOOP_XYZE(i) {
+    //   if (i==Z_AXIS)
+    //     temp_destination[i] = realtime_position[i] + diffz;
+    //   else
+    //     temp_destination[i] = realtime_position[i];
+    // }
+
+    // float cartesian_mm = fabs(diffz);
+    // float _feedrate_mm_s = MMM_TO_MMS_SCALED(feedrate_mm_m);
+    // float seconds = cartesian_mm / _feedrate_mm_s;
+    // int steps = max(1, int(delta_segments_per_second * seconds));
+    // float fraction_time = seconds/steps;
+    // bool do_extrude = 0;
+
+    // inverse_kinematics_temp(temp_destination);
+    // planner.buffer_line2(delta_temp[X_AXIS], delta_temp[Y_AXIS], delta_temp[Z_AXIS], destination[E_AXIS], _feedrate_mm_s, active_extruder, 1, fraction_time, 0);
+    // return diffz;
+    // LOOP_XYZE(i)
+    //   current_position[i] = temp_destination[i];
+    // set_current_to_destination();
+  }
+
   inline bool prepare_kinematic_move_to(float target[NUM_AXIS]) {
+
     float difference[NUM_AXIS];
     LOOP_XYZE(i) difference[i] = target[i] - current_position[i];
 
@@ -8069,12 +8475,17 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
     // SERIAL_ECHOPGM(" seconds="); SERIAL_ECHO(seconds);
     SERIAL_ECHOPGM(" steps="); SERIAL_ECHOLN(steps);
 
+    float realtime_position[3];
     for (int s = 1; s <= steps; s++) {
 
       float fraction = float(s) * inv_steps;
 
       LOOP_XYZE(i)
         target[i] = current_position[i] + difference[i] * fraction;
+
+      float fraction2 = float(s-1) * inv_steps; 
+      LOOP_XYZE(i)
+        realtime_position[i] = current_position[i] + difference[i] * fraction;
 
       inverse_kinematics(target);
 
@@ -8087,12 +8498,20 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
 
       if(s==1){
         planner.buffer_line2(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder, 1, fraction_time, do_extrude);
-      }else{
+      } else {
+        if(s%10==1){
+          if(difference[X_AXIS]!=0||difference[Y_AXIS]!=0){
+            int adc_value = checkLRF();
+            compensateZ(adc_value,realtime_position);
+          // current_position[Z_AXIS] = current_position[Z_AXIS] - diffz;
+          }
+        }
         planner.buffer_line2(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder, 0, fraction_time, do_extrude);
-      }
+      } 
     }
     return true;
   }
+
 
 #endif // DELTA || SCARA
 
@@ -8540,6 +8959,23 @@ void disable_all_steppers() {
   disable_e3();
 }
 
+void external_kill(){
+  // Check if the kill button was pressed and wait just in case it was an accidental
+  // key kill key press
+  // -------------------------------------------------------------------------------
+  static int killCount = 0;   // make the inactivity button a bit less responsive
+  const int KILL_DELAY = 750;
+  if (!READ(EMERGENCY_IN_PLC_PIN))
+    killCount++;
+  else if (killCount > 0)
+    killCount--;
+
+  // Exceeded threshold and we can confirm that it was not accidental
+  // KILL the machine
+  // ----------------------------------------------------------------
+  if (killCount >= KILL_DELAY) kill(PSTR(MSG_KILLED));
+}
+
 /**
  * Standard idle routine keeps the machine alive
  */
@@ -8549,7 +8985,7 @@ void idle(
   #endif
 ) {
   lcd_update();
-  host_keepalive();
+  // host_keepalive();
   manage_inactivity(
     #if ENABLED(FILAMENT_CHANGE_FEATURE)
       no_stepper_sleep
@@ -8745,6 +9181,8 @@ void manage_inactivity(bool ignore_stepper_queue/*=false*/) {
 }
 
 void kill(const char* lcd_msg) {
+  digitalWrite(EMERGENCY_OUT_PLC_PIN,HIGH);
+
   SERIAL_ERROR_START;
   SERIAL_ERRORLNPGM(MSG_ERR_KILLED);
 

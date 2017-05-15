@@ -223,6 +223,9 @@ void stop_screw();
 void get_density();
 void get_extruded_width();
 void get_extruded_height();
+void set_heater_temperature();
+void set_needle_valve();
+void set_screw_speed();
 
 void enable_all_steppers();
 void disable_all_steppers();
@@ -232,6 +235,7 @@ void ok_to_send();
 
 void reset_bed_level();
 void kill(const char*);
+void external_kill();
 
 void quickstop_stepper();
 
@@ -401,5 +405,12 @@ inline void do_blocking_move_to(float x, float y, float z, float fr_mm_m=0.0);
 inline void do_blocking_move_to_x(float x, float fr_mm_m=0.0);
 inline void do_blocking_move_to_z(float z, float fr_mm_m=0.0);
 inline void do_blocking_move_to_xy(float x, float y, float fr_mm_m=0.0);
+
+int checkLRF();
+int computeAverageADC();
+void computeRegressionCoef();
+void doComputeRegressionCoef();
+void do_move_z_axis(int total_step, bool CW);
+void displayCurrentError();
 
 #endif //MARLIN_H
