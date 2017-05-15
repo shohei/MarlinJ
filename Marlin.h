@@ -410,5 +410,7 @@ int checkLRF();
 int computeAverageADC();
 void computeRegressionCoef();
 void doComputeRegressionCoef();
+void do_move_z_axis(int total_step, bool CW);
+void displayCurrentError();
 
 #endif //MARLIN_H

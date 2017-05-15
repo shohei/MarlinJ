@@ -7763,8 +7763,20 @@ void process_next_command() {
         break;
 
       case 729:
-        computeRegressionCoef();
+        displayCurrentError();
+        // computeRegressionCoef();
         break;
+
+      case 730:
+        SERIAL_ECHOLNPGM("do move z+"); 
+        do_move_z_axis(100,true);
+        break;
+
+      case 731:
+        SERIAL_ECHOLNPGM("do move z-"); 
+        do_move_z_axis(100,false);
+        break;
+        
 
       #if ENABLED(LIN_ADVANCE)
         case 905: // M905 Set advance factor.
@@ -8250,30 +8262,40 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
 
   void do_move_z_axis(int total_step, bool CW){
     //delay1.9us: 155cycle(NOP): 84MHz
-    // #define _DELAY_1_9_US __asm__ __volatile__ ("nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"); 
+    // #define _DELAY_1_9_US __asm__ __volatile__ ("nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\tnop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\tnop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"); 
     //improved: delay1.9us: 147cycle(NOP): 84MHz: with IO writing overhead
     // #define _DELAY_1_9_US __asm__ __volatile__ ("nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"); 
     //delay1.9us for Arduino Mega (16MHz) 147/5 = 29cycle + res = 30cycle
-    #define _DELAY_1_9_US __asm__ __volatile__ ("nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t");
+    // #define _DELAY_1_9_US __asm__ __volatile__ ("nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t"" nop\n\t");
+    CRITICAL_SECTION_START
+    cli();
 
+    int CUR_X_DIR = digitalRead(X_DIR_PIN);
+    int CUR_Y_DIR = digitalRead(Y_DIR_PIN);
+    int CUR_Z_DIR = digitalRead(Z_DIR_PIN);
+    WRITE(X_DIR_PIN,CW);
+    WRITE(Y_DIR_PIN,CW);
+    WRITE(Z_DIR_PIN,CW);
     for (int i=0;i<total_step;i++){
-       WRITE(X_STEP_PIN,CW);
-       WRITE(Y_STEP_PIN,CW);
-       WRITE(Z_STEP_PIN,CW);
-       _DELAY_1_9_US;
-       WRITE(X_STEP_PIN,!CW);
-       WRITE(Y_STEP_PIN,!CW);
-       WRITE(Z_STEP_PIN,!CW);
-       _DELAY_1_9_US;
-    }
-  }
+       WRITE(X_STEP_PIN,true);
+       WRITE(Y_STEP_PIN,true);
+       WRITE(Z_STEP_PIN,true);
+       // _DELAY_1_9_US;
+       delayMicroseconds(2);
+       WRITE(X_STEP_PIN,false);
+       WRITE(Y_STEP_PIN,false);
+       WRITE(Z_STEP_PIN,false);
+       delayMicroseconds(2);
+       // _DELAY_1_9_US;
 
-  void move_z_axis(){
-    //100 times CW pulse
-    // do_move_z_axis(100,true);
-    //100 times CCW pulse
-    // do_move_z_axis(100,false);
-    // calculation: z[mm] / 0.012[mm/step] = total_pulse -> move_axis()
+       delayMicroseconds(1500);
+    }
+
+    WRITE(X_DIR_PIN,CUR_X_DIR);
+    WRITE(Y_DIR_PIN,CUR_Y_DIR);
+    WRITE(Z_DIR_PIN,CUR_Z_DIR);
+    sei();
+    CRITICAL_SECTION_END
   }
 
   int computeAverageADC(){
@@ -8366,18 +8388,44 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
     return adc0;
   }
 
-  float compensateZ(int adc_value_mV, float realtime_position[3]){
+  void displayCurrentError(){
+    int adc_value_mV = checkLRF();
+    float coef = 0.01171;
+    float intercept = 9.47928;
+    float machine_z = (coef * adc_value_mV ) + intercept;
+    float diffz = current_position[Z_AXIS] - machine_z; 
+    SERIAL_ECHOPGM("current z error: ");SERIAL_ECHO(diffz);SERIAL_ECHOPGM("[mm]");
+  }
+
+  void compensateZ(int adc_value_mV, float realtime_position[3]){
     //compute Z (LRF coordinate)
-    float coef = 1.01182;
-    float intercept = 0.08339;
-    // computeRegressionCoef();
+    float coef = 0.01171;
+    float intercept = 9.47928;
+    // float coef = 1.01182;
+    // float intercept = 0.08339;
 
     float machine_z = (coef * adc_value_mV ) + intercept;
     float diffz = realtime_position[Z_AXIS] - machine_z; 
     // SERIAL_ECHOPGM("adc: ");SERIAL_ECHOLN(adc_value_mV);
     // SERIAL_ECHOPGM("machine Z: ");SERIAL_ECHOLN(machine_z);
     // SERIAL_ECHOPGM("current_positon[Z_AXIS]: ");SERIAL_ECHOLN(realtime_z_position);
-    SERIAL_ECHOPGM("compensate z: ");SERIAL_ECHOLN(diffz);
+    SERIAL_ECHOPGM("compensate z: ");SERIAL_ECHO(diffz);SERIAL_ECHOPGM("[mm]");
+
+    // 1pulseで何mm進むか？
+    // 1pulseで1/1000度回転する
+    // 1回転で12mm進む
+    // 1/1000回転で0.012mm進む
+    // : 1pulseで0.012進む
+    float mm_per_pulse = 0.012;
+    int totalstep = (int) (diffz / mm_per_pulse); 
+    SERIAL_ECHOPGM("total step: ");SERIAL_ECHO(totalstep);SERIAL_ECHOPGM("[step]");
+
+    if(totalstep>0){
+      do_move_z_axis(totalstep,false);
+    }else if(totalstep<0){
+      do_move_z_axis(totalstep,true);
+    }
+
     // SERIAL_ECHOPGM("target z: ");
     // SERIAL_ECHO(lrf_z);
     // SERIAL_ECHOPGM(", true z: ");
@@ -8386,24 +8434,24 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
     // SERIAL_ECHOLN(diffz);
     //update z position
 
-    float temp_destination[3];
-    LOOP_XYZE(i) {
-      if (i==Z_AXIS)
-        temp_destination[i] = realtime_position[i] + diffz;
-      else
-        temp_destination[i] = realtime_position[i];
-    }
+    // float temp_destination[3];
+    // LOOP_XYZE(i) {
+    //   if (i==Z_AXIS)
+    //     temp_destination[i] = realtime_position[i] + diffz;
+    //   else
+    //     temp_destination[i] = realtime_position[i];
+    // }
 
-    float cartesian_mm = fabs(diffz);
-    float _feedrate_mm_s = MMM_TO_MMS_SCALED(feedrate_mm_m);
-    float seconds = cartesian_mm / _feedrate_mm_s;
-    int steps = max(1, int(delta_segments_per_second * seconds));
-    float fraction_time = seconds/steps;
-    bool do_extrude = 0;
+    // float cartesian_mm = fabs(diffz);
+    // float _feedrate_mm_s = MMM_TO_MMS_SCALED(feedrate_mm_m);
+    // float seconds = cartesian_mm / _feedrate_mm_s;
+    // int steps = max(1, int(delta_segments_per_second * seconds));
+    // float fraction_time = seconds/steps;
+    // bool do_extrude = 0;
 
-    inverse_kinematics_temp(temp_destination);
-    planner.buffer_line2(delta_temp[X_AXIS], delta_temp[Y_AXIS], delta_temp[Z_AXIS], destination[E_AXIS], _feedrate_mm_s, active_extruder, 1, fraction_time, 0);
-    return diffz;
+    // inverse_kinematics_temp(temp_destination);
+    // planner.buffer_line2(delta_temp[X_AXIS], delta_temp[Y_AXIS], delta_temp[Z_AXIS], destination[E_AXIS], _feedrate_mm_s, active_extruder, 1, fraction_time, 0);
+    // return diffz;
     // LOOP_XYZE(i)
     //   current_position[i] = temp_destination[i];
     // set_current_to_destination();
@@ -8450,17 +8498,16 @@ void mesh_line_to_destination(float fr_mm_m, uint8_t x_splits = 0xff, uint8_t y_
 
       if(s==1){
         planner.buffer_line2(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder, 1, fraction_time, do_extrude);
-      }else{
-        planner.buffer_line2(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder, 0, fraction_time, do_extrude);
-      }
-
-      if(s%10==1){
-        if(difference[X_AXIS]!=0||difference[Y_AXIS]!=0){
-          int adc_value = checkLRF();
-          // float diffz = compensateZ(adc_value,realtime_position);
+      } else {
+        if(s%10==1){
+          if(difference[X_AXIS]!=0||difference[Y_AXIS]!=0){
+            int adc_value = checkLRF();
+            compensateZ(adc_value,realtime_position);
           // current_position[Z_AXIS] = current_position[Z_AXIS] - diffz;
+          }
         }
-      }
+        planner.buffer_line2(delta[X_AXIS], delta[Y_AXIS], delta[Z_AXIS], target[E_AXIS], _feedrate_mm_s, active_extruder, 0, fraction_time, do_extrude);
+      } 
     }
     return true;
   }
@@ -8938,7 +8985,7 @@ void idle(
   #endif
 ) {
   lcd_update();
-  host_keepalive();
+  // host_keepalive();
   manage_inactivity(
     #if ENABLED(FILAMENT_CHANGE_FEATURE)
       no_stepper_sleep
