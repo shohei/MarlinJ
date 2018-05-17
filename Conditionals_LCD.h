@@ -32,7 +32,7 @@
 
   #if ENABLED(CARTESIO_UI)
     #define DOGLCD
-    #define ULTIPANEL
+    // #define ULTIPANEL
     #define NEWPANEL
     #define DEFAULT_LCD_CONTRAST 90
     #define LCD_CONTRAST_MIN 60
@@ -41,7 +41,7 @@
 
   #if ENABLED(MAKRPANEL) || ENABLED(MINIPANEL)
     #define DOGLCD
-    #define ULTIPANEL
+    // #define ULTIPANEL
     #define NEWPANEL
     #define DEFAULT_LCD_CONTRAST 17
   #endif
@@ -109,21 +109,21 @@
    || ENABLED(G3D_PANEL)                        \
    || ENABLED(RIGIDBOT_PANEL)                   \
    || ENABLED(REPRAPWORLD_KEYPAD)
-    #define ULTIPANEL
+    // #define ULTIPANEL
     #define NEWPANEL
   #endif
 
   #if ENABLED(RA_CONTROL_PANEL)
     #define LCD_I2C_TYPE_PCA8574
     #define LCD_I2C_ADDRESS 0x27   // I2C Address of the port expander
-    #define ULTIPANEL
+    // #define ULTIPANEL
     #define NEWPANEL
   #endif
 
   #if ENABLED(REPRAPWORLD_GRAPHICAL_LCD)
     #define DOGLCD
     #define U8GLIB_ST7920
-    #define ULTIPANEL
+    // #define ULTIPANEL
     #define NEWPANEL
   #endif
 
@@ -136,7 +136,7 @@
     // Make sure it is placed in the Arduino libraries directory.
     #define LCD_I2C_TYPE_PCF8575
     #define LCD_I2C_ADDRESS 0x27   // I2C Address of the port expander
-    #define ULTIPANEL
+    // #define ULTIPANEL
     #define NEWPANEL
   #endif
 
@@ -153,7 +153,7 @@
       #define ENCODER_STEPS_PER_MENU_ITEM 1
     #endif
 
-    #define ULTIPANEL
+    // #define ULTIPANEL
     #define NEWPANEL
   #endif
 
@@ -166,7 +166,7 @@
     #define LCD_I2C_TYPE_MCP23017
     #define LCD_I2C_ADDRESS 0x20 // I2C Address of the port expander
     #define LCD_USE_I2C_BUZZER //comment out to disable buzzer on LCD (requires LiquidTWI2 v1.2.3 or later)
-    #define ULTIPANEL
+    // #define ULTIPANEL
     #define NEWPANEL
 
     #define ENCODER_FEEDRATE_DEADZONE 4
@@ -186,7 +186,7 @@
 
   #if ENABLED(SAV_3DLCD)
     #define SR_LCD_2W_NL    // Non latching 2 wire shift register
-    #define ULTIPANEL
+    // #define ULTIPANEL
     #define NEWPANEL
   #endif
 

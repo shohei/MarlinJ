@@ -92,6 +92,7 @@
 
   bool lcd_blink();
 
+  #undef ULTIPANEL
   #if ENABLED(ULTIPANEL)
     #define BLEN_A 0
     #define BLEN_B 1

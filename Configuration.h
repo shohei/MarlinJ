@@ -157,7 +157,7 @@
 
 // Optional custom name for your RepStrap or other custom machine
 // Displayed in the LCD "Ready" message
-#define CUSTOM_MACHINE_NAME "JSR Pro"
+#define CUSTOM_MACHINE_NAME "Fabricator "
 
 // Define this to set a unique identifier for this printer, (Used by some programs to differentiate between machines)
 // You can use an online service to generate a random UUID. (eg http://www.uuidgenerator.net/version4)
@@ -411,51 +411,27 @@
   // Make delta curves from many straight lines (linear interpolation).
   // This is a trade-off between visible corners (not enough segments)
   // and processor overload (too many expensive sqrt calls).
-  // #define DELTA_SEGMENTS_PER_SECOND 20
   #define DELTA_SEGMENTS_PER_SECOND 20
-  // #define DELTA_SEGMENTS_PER_SECOND 20
 
   // NOTE NB all values for DELTA_* values MUST be floating point, so always have a decimal point in them
 
   // Center-to-center distance of the holes in the diagonal push rods.
-  // #define DELTA_DIAGONAL_ROD 430.4 // mm
-  // #define DELTA_DIAGONAL_ROD 366.0 // mm
-  #define DELTA_DIAGONAL_ROD 366.0 // mm
-  // #define DELTA_DIAGONAL_ROD 366.1 // mm
+  #define DELTA_DIAGONAL_ROD 263.52 // mm
 
   // Horizontal offset from middle of printer to smooth rod center.
-  // #define DELTA_SMOOTH_ROD_OFFSET 431.5 // mm
-  // #define DELTA_SMOOTH_ROD_OFFSET 436.5 // mm
-//true
-  // #define DELTA_SMOOTH_ROD_OFFSET 441.5 // mm
-  #define DELTA_SMOOTH_ROD_OFFSET 441.5 // mm
-//
-  // #define DELTA_SMOOTH_ROD_OFFSET 446.5 // mm
+  #define DELTA_SMOOTH_ROD_OFFSET 231 // mm
 
   // Horizontal offset of the universal joints on the end effector.
-  // #define DELTA_EFFECTOR_OFFSET 219.3// mm
-  #define DELTA_EFFECTOR_OFFSET 217.7// mm
+  #define DELTA_EFFECTOR_OFFSET 52// mm
 
   // Horizontal offset of the universal joints on the carriages.
-  // #define DELTA_CARRIAGE_OFFSET 68.3 // mm
-  // #define DELTA_CARRIAGE_OFFSET 68.8 // mm
-//true
-  // #define DELTA_CARRIAGE_OFFSET 69.3 // mm
-  // #define DELTA_CARRIAGE_OFFSET (67.7-4) // mm
-  #define DELTA_CARRIAGE_OFFSET (67.7) // mm
-//median
-  // #define DELTA_CARRIAGE_OFFSET 69.8 // mm
-  // #define DELTA_CARRIAGE_OFFSET 71.3 // mm
-  // #define DELTA_CARRIAGE_OFFSET 71.8 // mm
+  #define DELTA_CARRIAGE_OFFSET 50.89 // mm
 
   // Horizontal distance bridged by diagonal push rods when effector is centered.
-  // #define DELTA_RADIUS 152.9
-  // #define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-(DELTA_EFFECTOR_OFFSET)-(DELTA_CARRIAGE_OFFSET))
-  #define DELTA_RADIUS 145
-  // #define DELTA_RADIUS (156.1+1)
+  #define DELTA_RADIUS (DELTA_SMOOTH_ROD_OFFSET-DELTA_EFFECTOR_OFFSET-DELTA_CARRIAGE_OFFSET)
 
   // Print surface diameter/2 minus unreachable space (avoid collisions with vertical towers).
-  #define DELTA_PRINTABLE_RADIUS 150
+  #define DELTA_PRINTABLE_RADIUS 120
 
   // Delta calibration menu
   // uncomment to add three points calibration menu option.
@@ -861,7 +837,7 @@
 // #define MANUAL_Z_HOME_POS 372.3// Distance between the nozzle to printbed after homing
 // #define MANUAL_Z_HOME_POS 370.3// Distance between the nozzle to printbed after homing
 // #define MANUAL_Z_HOME_POS 436.3// Distance between the nozzle to printbed after homing
-#define MANUAL_Z_HOME_POS 432.3// Distance between the nozzle to printbed after homing
+#define MANUAL_Z_HOME_POS 200// Distance between the nozzle to printbed after homing
 
 // Use "Z Safe Homing" to avoid homing with a Z probe outside the bed area.
 //
@@ -889,22 +865,22 @@
 
 #define XYZ_FULL_STEPS_PER_ROTATION 200
 // #define XYZ_MICROSTEPS 1 
-#define XYZ_MICROSTEPS 16
+#define XYZ_MICROSTEPS 32 
 #define XYZ_BELT_PITCH 1
-#define XYZ_PULLEY_TEETH 12
+#define XYZ_PULLEY_TEETH 6 
 #define XYZ_STEPS ((XYZ_FULL_STEPS_PER_ROTATION) * (XYZ_MICROSTEPS) / double(XYZ_BELT_PITCH) / double(XYZ_PULLEY_TEETH))
 
 // default settings
 // delta speeds must be the same on xyz
 #define DEFAULT_AXIS_STEPS_PER_UNIT   {XYZ_STEPS, XYZ_STEPS, XYZ_STEPS, 184.8}
-#define DEFAULT_MAX_FEEDRATE          {2000, 2000, 2000, 2000}    // (mm/sec)
+#define DEFAULT_MAX_FEEDRATE          {30000, 30000, 30000, 30000}    // (mm/sec)
 // #define DEFAULT_MAX_ACCELERATION      {900,900,900,900}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
-#define DEFAULT_MAX_ACCELERATION      {600,600,600,600}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
+#define DEFAULT_MAX_ACCELERATION      {9000,9000,9000,9000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
 // #define DEFAULT_MAX_ACCELERATION      {9000,9000,9000,9000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
 
-#define DEFAULT_ACCELERATION          300    // X, Y, Z and E acceleration in mm/s^2 for printing moves
-#define DEFAULT_RETRACT_ACCELERATION  300    // E acceleration in mm/s^2 for retracts
-#define DEFAULT_TRAVEL_ACCELERATION   300    // X, Y, Z acceleration in mm/s^2 for travel (non printing) moves
+#define DEFAULT_ACCELERATION          3000    // X, Y, Z and E acceleration in mm/s^2 for printing moves
+#define DEFAULT_RETRACT_ACCELERATION  3000    // E acceleration in mm/s^2 for retracts
+#define DEFAULT_TRAVEL_ACCELERATION   3000    // X, Y, Z acceleration in mm/s^2 for travel (non printing) moves
 // #define DEFAULT_ACCELERATION          3000    // X, Y, Z and E acceleration in mm/s^2 for printing moves
 // #define DEFAULT_RETRACT_ACCELERATION  3000    // E acceleration in mm/s^2 for retracts
 // #define DEFAULT_TRAVEL_ACCELERATION   3000    // X, Y, Z acceleration in mm/s^2 for travel (non printing) moves
