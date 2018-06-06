@@ -317,7 +317,8 @@ const float homing_feedrate_mm_m[] = {
   #endif
   HOMING_FEEDRATE_Z, 0
 };
-static float feedrate_mm_m = 1500.0, saved_feedrate_mm_m;
+// static float feedrate_mm_m = 1500.0, saved_feedrate_mm_m;
+static float feedrate_mm_m = 1000.0, saved_feedrate_mm_m;
 int feedrate_percentage = 100, saved_feedrate_percentage;
 
 bool axis_relative_modes[] = AXIS_RELATIVE_MODES;
@@ -1680,9 +1681,9 @@ void do_blocking_move_to(float x, float y, float z, float fr_mm_m /*=0.0*/) {
   #endif
 
   #if ENABLED(DELTA)
-
-    feedrate_mm_m = (fr_mm_m != 0.0) ? fr_mm_m : XY_PROBE_FEEDRATE_MM_M;
-
+  
+      feedrate_mm_m = (fr_mm_m != 0.0) ? fr_mm_m : XY_PROBE_FEEDRATE_MM_M;
+  
     set_destination_to_current();          // sync destination at the start
 
     #if ENABLED(DEBUG_LEVELING_FEATURE)
@@ -1768,7 +1769,8 @@ void do_blocking_move_to_x(float x, float fr_mm_m/*=0.0*/) {
   do_blocking_move_to(x, current_position[Y_AXIS], current_position[Z_AXIS], fr_mm_m);
 }
 void do_blocking_move_to_z(float z, float fr_mm_m/*=0.0*/) {
-  do_blocking_move_to(current_position[X_AXIS], current_position[Y_AXIS], z, fr_mm_m);
+    SERIAL_ECHOPGM(" fr_mm_m: "); SERIAL_ECHOLN(fr_mm_m);
+    do_blocking_move_to(current_position[X_AXIS], current_position[Y_AXIS], z, fr_mm_m);
 }
 void do_blocking_move_to_xy(float x, float y, float fr_mm_m/*=0.0*/) {
   do_blocking_move_to(x, y, current_position[Z_AXIS], fr_mm_m);

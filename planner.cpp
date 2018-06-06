@@ -660,6 +660,8 @@ void Planner::check_axes_activity() {
 
   //DEBUG
   // SERIAL_ECHOPGM(" block->steps[X_AXIS]"); SERIAL_ECHOLN(block->steps[X_AXIS]);
+  // SERIAL_ECHOPGM(" block->steps[Y_AXIS]"); SERIAL_ECHOLN(block->steps[Y_AXIS]);
+  // SERIAL_ECHOPGM(" block->steps[Z_AXIS]"); SERIAL_ECHOLN(block->steps[Z_AXIS]);
 
   // Bail if this is a zero-length block
   if (block->step_event_count <= dropsegments) return;

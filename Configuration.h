@@ -476,12 +476,18 @@
 #endif
 
 // Mechanical endstop with COM to ground and NC to Signal uses "false" here (most common setup).
-#define X_MIN_ENDSTOP_INVERTING false // set to true to invert the logic of the endstop.
-#define Y_MIN_ENDSTOP_INVERTING false // set to true to invert the logic of the endstop.
-#define Z_MIN_ENDSTOP_INVERTING false // set to true to invert the logic of the endstop.
-#define X_MAX_ENDSTOP_INVERTING false // set to true to invert the logic of the endstop.
-#define Y_MAX_ENDSTOP_INVERTING false // set to true to invert the logic of the endstop.
-#define Z_MAX_ENDSTOP_INVERTING false // set to true to invert the logic of the endstop.
+// #define X_MIN_ENDSTOP_INVERTING false // set to true to invert the logic of the endstop.
+// #define Y_MIN_ENDSTOP_INVERTING false // set to true to invert the logic of the endstop.
+// #define Z_MIN_ENDSTOP_INVERTING false // set to true to invert the logic of the endstop.
+// #define X_MAX_ENDSTOP_INVERTING false // set to true to invert the logic of the endstop.
+// #define Y_MAX_ENDSTOP_INVERTING false // set to true to invert the logic of the endstop.
+// #define Z_MAX_ENDSTOP_INVERTING false // set to true to invert the logic of the endstop.
+#define X_MIN_ENDSTOP_INVERTING true // set to true to invert the logic of the endstop.
+#define Y_MIN_ENDSTOP_INVERTING true // set to true to invert the logic of the endstop.
+#define Z_MIN_ENDSTOP_INVERTING true // set to true to invert the logic of the endstop.
+#define X_MAX_ENDSTOP_INVERTING true// set to true to invert the logic of the endstop.
+#define Y_MAX_ENDSTOP_INVERTING true// set to true to invert the logic of the endstop.
+#define Z_MAX_ENDSTOP_INVERTING true // set to true to invert the logic of the endstop.
 #define Z_MIN_PROBE_ENDSTOP_INVERTING false // set to true to invert the logic of the endstop.
 
 //===========================================================================
@@ -539,7 +545,8 @@
 #define Z_PROBE_OFFSET_FROM_EXTRUDER -17.25  // Increase this if the first layer is too thin (remember: it's a negative number so increase means closer to zero).
 
 // X and Y axis travel speed (mm/m) between probes
-#define XY_PROBE_SPEED 8000
+// #define XY_PROBE_SPEED 8000
+#define XY_PROBE_SPEED 800
 // Speed for the first approach when double-probing (with PROBE_DOUBLE_TOUCH)
 #define Z_PROBE_SPEED_FAST HOMING_FEEDRATE_Z
 // Speed for the "accurate" probe of each point
@@ -680,9 +687,12 @@
 // @section machine
 
 // Invert the stepper direction. Change (or reverse the motor connector) if an axis goes the wrong way.
-#define INVERT_X_DIR false
-#define INVERT_Y_DIR false
-#define INVERT_Z_DIR false
+// #define INVERT_X_DIR false
+// #define INVERT_Y_DIR false
+// #define INVERT_Z_DIR false
+#define INVERT_X_DIR true
+#define INVERT_Y_DIR true
+#define INVERT_Z_DIR true
 
 // @section extruder
 
@@ -856,7 +866,8 @@
 
 
 // Delta only homes to Z
-#define HOMING_FEEDRATE_Z  (50*60)
+// #define HOMING_FEEDRATE_Z  (50*60)
+#define HOMING_FEEDRATE_Z  800
 
 //
 // MOVEMENT SETTINGS
@@ -864,8 +875,8 @@
 //
 
 #define XYZ_FULL_STEPS_PER_ROTATION 200
-// #define XYZ_MICROSTEPS 1 
-#define XYZ_MICROSTEPS 32 
+#define XYZ_MICROSTEPS 1 
+// #define XYZ_MICROSTEPS 32 
 #define XYZ_BELT_PITCH 1
 #define XYZ_PULLEY_TEETH 6 
 #define XYZ_STEPS ((XYZ_FULL_STEPS_PER_ROTATION) * (XYZ_MICROSTEPS) / double(XYZ_BELT_PITCH) / double(XYZ_PULLEY_TEETH))
@@ -873,14 +884,15 @@
 // default settings
 // delta speeds must be the same on xyz
 #define DEFAULT_AXIS_STEPS_PER_UNIT   {XYZ_STEPS, XYZ_STEPS, XYZ_STEPS, 184.8}
-#define DEFAULT_MAX_FEEDRATE          {30000, 30000, 30000, 30000}    // (mm/sec)
-// #define DEFAULT_MAX_ACCELERATION      {900,900,900,900}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
-#define DEFAULT_MAX_ACCELERATION      {9000,9000,9000,9000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
+// #define DEFAULT_MAX_FEEDRATE          {30000, 30000, 30000, 30000}    // (mm/sec)
+#define DEFAULT_MAX_FEEDRATE          {800, 800, 800, 800}    // (mm/sec)
+#define DEFAULT_MAX_ACCELERATION      {900,900,900,900}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
+// #define DEFAULT_MAX_ACCELERATION      {90,90,90,90}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
 // #define DEFAULT_MAX_ACCELERATION      {9000,9000,9000,9000}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for Skeinforge 40+, for older versions raise them a lot.
 
-#define DEFAULT_ACCELERATION          3000    // X, Y, Z and E acceleration in mm/s^2 for printing moves
-#define DEFAULT_RETRACT_ACCELERATION  3000    // E acceleration in mm/s^2 for retracts
-#define DEFAULT_TRAVEL_ACCELERATION   3000    // X, Y, Z acceleration in mm/s^2 for travel (non printing) moves
+#define DEFAULT_ACCELERATION          300    // X, Y, Z and E acceleration in mm/s^2 for printing moves
+#define DEFAULT_RETRACT_ACCELERATION  300   // E acceleration in mm/s^2 for retracts
+#define DEFAULT_TRAVEL_ACCELERATION   300    // X, Y, Z acceleration in mm/s^2 for travel (non printing) moves
 // #define DEFAULT_ACCELERATION          3000    // X, Y, Z and E acceleration in mm/s^2 for printing moves
 // #define DEFAULT_RETRACT_ACCELERATION  3000    // E acceleration in mm/s^2 for retracts
 // #define DEFAULT_TRAVEL_ACCELERATION   3000    // X, Y, Z acceleration in mm/s^2 for travel (non printing) moves
