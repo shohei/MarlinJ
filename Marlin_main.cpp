@@ -556,6 +556,8 @@ static bool send_ok[BUFSIZE];
   #define KEEPALIVE_STATE(n) ;
 #endif // HOST_KEEPALIVE_FEATURE
 
+uint8_t current_tool_number;
+
 /**
  * ***************************************************************************
  * ******************************** FUNCTIONS ********************************
@@ -995,6 +997,8 @@ void setup() {
   pref->density = DENSITY;
 
   digitalWrite(HG_TRG_PIN, LOW);
+
+  digitalWrite(ATC_EN_PIN, LOW);
 }
 
 /**
@@ -6984,36 +6988,76 @@ void tool_change(const uint8_t tmp_extruder, const float fr_mm_m/*=0.0*/, bool n
  *   F[units/min] Set the movement feedrate
  *   S1           Don't move the tool in XY after change
  */
-inline void gcode_T(uint8_t tmp_extruder) {
+#define TOOL0_ABS_POS 100
+#define TOOL1_ABS_POS 200
+#define TOOL2_ABS_POS 400
+#define TOOL3_ABS_POS 500
+#define TOOL4_ABS_POS 600
+#define TOOL5_ABS_POS 700
 
-  #if ENABLED(DEBUG_LEVELING_FEATURE)
-    if (DEBUGGING(LEVELING)) {
-      SERIAL_ECHOPAIR(">>> gcode_T(", tmp_extruder);
-      SERIAL_ECHOLNPGM(")");
-      DEBUG_POS("BEFORE", current_position);
+#define ATC_ABS_POS(num) TOOL ## num ## _ABS_POS
+
+void atc_homing(){
+  int abs_distance = ATC_ABS_POS(5);
+  while(digitalRead(ATC_MIN_PIN)==HIGH){
+      digitalWrite(ATC_STEP_PIN,HIGH);
+      delay(1);
+      digitalWrite(ATC_STEP_PIN,LOW);
+      delay(1);
+  }
+}
+
+inline void gcode_T(uint8_t next_tool_number) {
+  int diff = current_tool_number - next_tool_number;
+  int abs_distance = ATC_ABS_POS(next_tool_number) - ATC_ABS_POS(current_tool_number);
+  if(diff>0){
+    //CW
+    digitalWrite(ATC_DIR_PIN,HIGH);
+    for(int i=0;i<abs_distance;i++){
+      digitalWrite(ATC_STEP_PIN,HIGH);
+      delay(1);
+      digitalWrite(ATC_STEP_PIN,LOW);
+      delay(1);
     }
-  #endif
-
-  #if HOTENDS == 1 || (ENABLED(MIXING_EXTRUDER) && MIXING_VIRTUAL_TOOLS > 1)
-
-    tool_change(tmp_extruder);
-
-  #elif HOTENDS > 1
-
-    tool_change(
-      tmp_extruder,
-      code_seen('F') ? code_value_axis_units(X_AXIS) : 0.0,
-      (tmp_extruder == active_extruder) || (code_seen('S') && code_value_bool())
-    );
-
-  #endif
-
-  #if ENABLED(DEBUG_LEVELING_FEATURE)
-    if (DEBUGGING(LEVELING)) {
-      DEBUG_POS("AFTER", current_position);
-      SERIAL_ECHOLNPGM("<<< gcode_T");
+  } else if (diff<0){
+    //CCW
+    digitalWrite(ATC_DIR_PIN,LOW);
+    for(int i=0;i<abs_distance;i++){
+      digitalWrite(ATC_STEP_PIN,HIGH);
+      delay(1);
+      digitalWrite(ATC_STEP_PIN,LOW);
+      delay(1);
     }
-  #endif
+  }
+
+  // #if ENABLED(DEBUG_LEVELING_FEATURE)
+  //   if (DEBUGGING(LEVELING)) {
+  //     SERIAL_ECHOPAIR(">>> gcode_T(", tmp_extruder);
+  //     SERIAL_ECHOLNPGM(")");
+  //     DEBUG_POS("BEFORE", current_position);
+  //   }
+  // #endif
+
+  // #if HOTENDS == 1 || (ENABLED(MIXING_EXTRUDER) && MIXING_VIRTUAL_TOOLS > 1)
+
+  //   tool_change(tmp_extruder);
+
+  // #elif HOTENDS > 1
+
+  //   tool_change(
+  //     tmp_extruder,
+  //     code_seen('F') ? code_value_axis_units(X_AXIS) : 0.0,
+  //     (tmp_extruder == active_extruder) || (code_seen('S') && code_value_bool())
+  //   );
+
+  // #endif
+
+  // #if ENABLED(DEBUG_LEVELING_FEATURE)
+  //   if (DEBUGGING(LEVELING)) {
+  //     DEBUG_POS("AFTER", current_position);
+  //     SERIAL_ECHOLNPGM("<<< gcode_T");
+  //   }
+  // #endif
 }
 
 /**
@@ -7776,6 +7820,7 @@ void execute_heatgun(){
       }
     }
 }
+
 
 void FlushSerialRequestResend() {
   //char command_queue[cmd_queue_index_r][100]="Resend:";
