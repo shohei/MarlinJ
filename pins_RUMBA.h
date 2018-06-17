@@ -81,6 +81,8 @@
 #define HEATER_1_PIN        -1   // EXTRUDER 2
 #define HEATER_2_PIN        -1   // EXTRUDER 3
 
+#define HG_TRG_PIN          53
+
 #if TEMP_SENSOR_0 == -1
 #define TEMP_0_PIN        -1   // ANALOG NUMBERING - connector *K1* on RUMBA thermocouple ADD ON is used
 #else
