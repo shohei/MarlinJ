@@ -993,6 +993,9 @@ void setup() {
   pref->extruded_width = EXTRUDED_WIDTH;
   pref->extruded_height = EXTRUDED_HEIGHT;
   pref->density = DENSITY;
+
+  pinMode(HG_TRG_PIN,OUTPUT);
+  digitalWrite(HG_TRG_PIN, LOW);
 }
 
 /**
@@ -7664,6 +7667,10 @@ void process_next_command() {
         get_extruded_height();
         break;
 
+      case 730:
+        execute_heatgun();
+        break;
+
       #if ENABLED(LIN_ADVANCE)
         case 905: // M905 Set advance factor.
           gcode_M905();
@@ -7758,6 +7765,14 @@ void get_extruded_height(){
       SERIAL_ECHOPGM("extruded_height updated: ");
       SERIAL_ECHOLN(pref->extruded_height);
     }
+}
+
+void execute_heatgun(){
+    SERIAL_ECHOLNPGM("heatgun triggered"); 
+    digitalWrite(HG_TRG_PIN,HIGH);
+    delay(30);
+    digitalWrite(HG_TRG_PIN,LOW);
+    delay(30);
 }
 
 void FlushSerialRequestResend() {
