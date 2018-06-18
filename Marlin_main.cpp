@@ -6983,10 +6983,8 @@ void tool_change(const uint8_t tmp_extruder, const float fr_mm_m/*=0.0*/, bool n
 }
 
 /**
- * T0-T3: Switch tool, usually switching extruders
+ * T0-T5: Switch tool, by rotating ATC tool wheel
  *
- *   F[units/min] Set the movement feedrate
- *   S1           Don't move the tool in XY after change
  */
 #define TOOL0_ABS_POS 100
 #define TOOL1_ABS_POS 200
@@ -6995,10 +6993,16 @@ void tool_change(const uint8_t tmp_extruder, const float fr_mm_m/*=0.0*/, bool n
 #define TOOL4_ABS_POS 600
 #define TOOL5_ABS_POS 700
 
-#define ATC_ABS_POS(num) TOOL ## num ## _ABS_POS
+#define ATC_ABS_POS(num) _ATC_ABS_POS(num)
+#define _ATC_ABS_POS(num) TOOL ## num ## _ABS_POS
+
+void atc_pulse_run(){
+
+  
+}
 
 void atc_homing(){
-  int abs_distance = ATC_ABS_POS(5);
+  int abs_distance = ATC_ABS_POS(5)*2;
   while(digitalRead(ATC_MIN_PIN)==HIGH){
       digitalWrite(ATC_STEP_PIN,HIGH);
       delay(1);
@@ -7008,8 +7012,49 @@ void atc_homing(){
 }
 
 inline void gcode_T(uint8_t next_tool_number) {
-  int diff = current_tool_number - next_tool_number;
-  int abs_distance = ATC_ABS_POS(next_tool_number) - ATC_ABS_POS(current_tool_number);
+  int diff = next_tool_number - current_tool_number;
+  int current_abs_pos, next;_pos;
+  switch(current_tool_number){
+    case 0:
+     current_abs_pos = TOOL0_ABS_POS;
+     break;
+    case 1:
+     current_abs_pos = TOOL1_ABS_POS;
+     break;
+    case 2:
+     current_abs_pos = TOOL2_ABS_POS;
+     break;
+    case 3:
+     current_abs_pos = TOOL3_ABS_POS;
+     break;
+    case 4:
+     current_abs_pos = TOOL4_ABS_POS;
+     break;
+    case 5:
+     current_abs_pos = TOOL5_ABS_POS;
+     break;
+  }
+  switch(next_tool_number){
+    case 0:
+     next_abs_pos = TOOL0_ABS_POS;
+     break;
+    case 1:
+     next_abs_pos = TOOL1_ABS_POS;
+     break;
+    case 2:
+     next_abs_pos = TOOL2_ABS_POS;
+     break;
+    case 3:
+     next_abs_pos = TOOL3_ABS_POS;
+     break;
+    case 4:
+     next_abs_pos = TOOL4_ABS_POS;
+     break;
+    case 5:
+     next_abs_pos = TOOL5_ABS_POS;
+     break;
+  }
+  int abs_distance = next_abs_pos - current_abs_pos;
   if(diff>0){
     //CW
     digitalWrite(ATC_DIR_PIN,HIGH);
