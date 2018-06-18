@@ -994,6 +994,7 @@ void setup() {
   pref->extruded_height = EXTRUDED_HEIGHT;
   pref->density = DENSITY;
 
+  pinMode(HG_TRG_PIN,OUTPUT);
   digitalWrite(HG_TRG_PIN, LOW);
 }
 
@@ -7770,8 +7771,10 @@ void execute_heatgun(){
     if (code_seen('S')) {
       int heatgun_is_enabled = code_value_int(); 
       if(heatgun_is_enabled){
+        SERIAL_ECHOLNPGM("heatgun power on");
         digitalWrite(HG_TRG_PIN,HIGH);
       } else {
+        SERIAL_ECHOLNPGM("heatgun power off");
         digitalWrite(HG_TRG_PIN,LOW);
       }
     }
