@@ -81,6 +81,11 @@
 #define HEATER_1_PIN        -1   // EXTRUDER 2
 #define HEATER_2_PIN        -1   // EXTRUDER 3
 
+#define ATC_STEP_PIN        65
+#define ATC_DIR_PIN         66
+#define ATC_EN_PIN          44
+#define ATC_MIN_PIN         29
+
 #define HG_TRG_PIN          53
 
 #if TEMP_SENSOR_0 == -1

@@ -556,6 +556,8 @@ static bool send_ok[BUFSIZE];
   #define KEEPALIVE_STATE(n) ;
 #endif // HOST_KEEPALIVE_FEATURE
 
+uint8_t current_tool_number;
+
 /**
  * ***************************************************************************
  * ******************************** FUNCTIONS ********************************
@@ -995,8 +997,21 @@ void setup() {
   pref->density = DENSITY;
 
   pinMode(HG_TRG_PIN,OUTPUT);
-  digitalWrite(HG_TRG_PIN, LOW);
+  digitalWrite(HG_TRG_PIN, HIGH);
+
+  pinMode(ATC_EN_PIN,OUTPUT);
+  pinMode(ATC_STEP_PIN,OUTPUT);
+  pinMode(ATC_DIR_PIN,OUTPUT);
+  pinMode(ATC_MIN_PIN,INPUT);
+  digitalWrite(ATC_EN_PIN, LOW);
+  digitalWrite(ATC_DIR_PIN, LOW);
+
+  TCCR2A = 0b00000010;  //10:CTCモード
+  TCCR2B = 0b00000111;  //N=1024
+  TIMSK2 = 0b00000010;  //コンペアマッチAの割り込みを設定
+  OCR2A = 1;  
 }
+
 
 /**
  * The main Marlin program loop
@@ -3218,6 +3233,8 @@ inline void gcode_G28() {
   #endif
 
   report_current_position();
+
+  atc_homing();
 }
 
 #if HAS_PROBING_PROCEDURE
@@ -6980,41 +6997,129 @@ void tool_change(const uint8_t tmp_extruder, const float fr_mm_m/*=0.0*/, bool n
 }
 
 /**
- * T0-T3: Switch tool, usually switching extruders
+ * T0-T5: Switch tool, by rotating ATC tool wheel
  *
- *   F[units/min] Set the movement feedrate
- *   S1           Don't move the tool in XY after change
  */
-inline void gcode_T(uint8_t tmp_extruder) {
+#define TOOL0_ABS_POS 20000   //Spindle
+#define TOOL1_ABS_POS 130000  //3D Print extruder
+#define TOOL2_ABS_POS 400000  //Chip mounter
+#define TOOL3_ABS_POS 555000  //Heat gun
+// #define TOOL4_ABS_POS 0
+// #define TOOL5_ABS_POS 0
 
-  #if ENABLED(DEBUG_LEVELING_FEATURE)
-    if (DEBUGGING(LEVELING)) {
-      SERIAL_ECHOPAIR(">>> gcode_T(", tmp_extruder);
-      SERIAL_ECHOLNPGM(")");
-      DEBUG_POS("BEFORE", current_position);
+#define ATC_ABS_POS(num) _ATC_ABS_POS(num)
+#define _ATC_ABS_POS(num) TOOL ## num ## _ABS_POS
+
+long remaining_pulses;
+bool is_atc_homing = false;
+long current_atc_position = 0;
+
+ISR(TIMER2_COMPA_vect) 
+{
+  if(is_atc_homing){
+   if( READ(ATC_MIN_PIN)^ATC_MIN_ENDSTOP_INVERTING ){ //ENDSTOP HIT
+     current_atc_position = 0;
+     remaining_pulses = 0; 
+     is_atc_homing = false;
+   }
+  }
+  if(remaining_pulses>0){
+      digitalWrite(ATC_DIR_PIN,LOW);
+
+      digitalWrite(ATC_STEP_PIN,HIGH);
+      delayMicroseconds(10);
+      digitalWrite(ATC_STEP_PIN,LOW);
+      delayMicroseconds(10);
+
+      remaining_pulses--;
+  }
+  if(remaining_pulses<0){
+      digitalWrite(ATC_DIR_PIN,HIGH);
+
+      digitalWrite(ATC_STEP_PIN,HIGH);
+      delayMicroseconds(10);
+      digitalWrite(ATC_STEP_PIN,LOW);
+      delayMicroseconds(10);
+
+      remaining_pulses++;
+  }
+}
+
+void atc_pulse_run(){
+  if(code_seen('S')){
+    long target_atc_position = code_value_long();
+    if(relative_mode){
+      remaining_pulses = target_atc_position;
+      current_atc_position = current_atc_position + target_atc_position;
+    }else{
+      remaining_pulses = target_atc_position - current_atc_position;
+      current_atc_position = target_atc_position;
     }
-  #endif
+  }
+  if(code_seen('F')){
+    int b = code_value_int();
+    OCR2A = b;
+  }
+}
 
-  #if HOTENDS == 1 || (ENABLED(MIXING_EXTRUDER) && MIXING_VIRTUAL_TOOLS > 1)
+void atc_homing(){
+  is_atc_homing = true;
+  remaining_pulses = -1000000;
+}
 
-    tool_change(tmp_extruder);
+inline void gcode_T(uint8_t next_tool_number) {
+  long target_atc_position;
+  switch(next_tool_number){
+    case 0:
+     target_atc_position = TOOL0_ABS_POS;
+     remaining_pulses = target_atc_position - current_atc_position;
+     current_atc_position = target_atc_position;
+     break;
+    case 1:
+     target_atc_position = TOOL1_ABS_POS;
+     remaining_pulses = target_atc_position - current_atc_position;
+     current_atc_position = target_atc_position;
+     break;
+    case 2:
+     target_atc_position = TOOL2_ABS_POS;
+     remaining_pulses = target_atc_position - current_atc_position;
+     current_atc_position = target_atc_position;
+     break;
+    case 3:
+     target_atc_position = TOOL3_ABS_POS;
+     remaining_pulses = target_atc_position - current_atc_position;
+     current_atc_position = target_atc_position;
+     break;
+  }
 
-  #elif HOTENDS > 1
+  // #if ENABLED(DEBUG_LEVELING_FEATURE)
+  //   if (DEBUGGING(LEVELING)) {
+  //     SERIAL_ECHOPAIR(">>> gcode_T(", tmp_extruder);
+  //     SERIAL_ECHOLNPGM(")");
+  //     DEBUG_POS("BEFORE", current_position);
+  //   }
+  // #endif
 
-    tool_change(
-      tmp_extruder,
-      code_seen('F') ? code_value_axis_units(X_AXIS) : 0.0,
-      (tmp_extruder == active_extruder) || (code_seen('S') && code_value_bool())
-    );
+  // #if HOTENDS == 1 || (ENABLED(MIXING_EXTRUDER) && MIXING_VIRTUAL_TOOLS > 1)
 
-  #endif
+  //   tool_change(tmp_extruder);
 
-  #if ENABLED(DEBUG_LEVELING_FEATURE)
-    if (DEBUGGING(LEVELING)) {
-      DEBUG_POS("AFTER", current_position);
-      SERIAL_ECHOLNPGM("<<< gcode_T");
-    }
-  #endif
+  // #elif HOTENDS > 1
+
+  //   tool_change(
+  //     tmp_extruder,
+  //     code_seen('F') ? code_value_axis_units(X_AXIS) : 0.0,
+  //     (tmp_extruder == active_extruder) || (code_seen('S') && code_value_bool())
+  //   );
+
+  // #endif
+
+  // #if ENABLED(DEBUG_LEVELING_FEATURE)
+  //   if (DEBUGGING(LEVELING)) {
+  //     DEBUG_POS("AFTER", current_position);
+  //     SERIAL_ECHOLNPGM("<<< gcode_T");
+  //   }
+  // #endif
 }
 
 /**
@@ -7671,6 +7776,14 @@ void process_next_command() {
         execute_heatgun();
         break;
 
+      case 731:
+        atc_pulse_run();
+        break;
+
+      case 732:
+        atc_homing();
+        break;
+
       #if ENABLED(LIN_ADVANCE)
         case 905: // M905 Set advance factor.
           gcode_M905();
@@ -7769,11 +7882,12 @@ void get_extruded_height(){
 
 void execute_heatgun(){
     SERIAL_ECHOLNPGM("heatgun triggered"); 
-    digitalWrite(HG_TRG_PIN,HIGH);
-    delay(30);
     digitalWrite(HG_TRG_PIN,LOW);
     delay(30);
+    digitalWrite(HG_TRG_PIN,HIGH);
+    delay(30);
 }
+
 
 void FlushSerialRequestResend() {
   //char command_queue[cmd_queue_index_r][100]="Resend:";
