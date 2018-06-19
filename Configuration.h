@@ -1465,4 +1465,12 @@
   //#define FILAMENT_LCD_DISPLAY
 #endif
 
+ /* ATC definition */ 
+#define TOOL0_ABS_POS 20000   //Spindle
+#define TOOL1_ABS_POS 130000  //3D Print extruder
+#define TOOL2_ABS_POS 400000  //Chip mounter
+#define TOOL3_ABS_POS 555000  //Heat gun
+// #define TOOL4_ABS_POS 0
+// #define TOOL5_ABS_POS 0
+
 #endif // CONFIGURATION_H

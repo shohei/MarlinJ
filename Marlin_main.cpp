@@ -7000,15 +7000,6 @@ void tool_change(const uint8_t tmp_extruder, const float fr_mm_m/*=0.0*/, bool n
  * T0-T5: Switch tool, by rotating ATC tool wheel
  *
  */
-#define TOOL0_ABS_POS 20000   //Spindle
-#define TOOL1_ABS_POS 130000  //3D Print extruder
-#define TOOL2_ABS_POS 400000  //Chip mounter
-#define TOOL3_ABS_POS 555000  //Heat gun
-// #define TOOL4_ABS_POS 0
-// #define TOOL5_ABS_POS 0
-
-#define ATC_ABS_POS(num) _ATC_ABS_POS(num)
-#define _ATC_ABS_POS(num) TOOL ## num ## _ABS_POS
 
 long remaining_pulses;
 bool is_atc_homing = false;
