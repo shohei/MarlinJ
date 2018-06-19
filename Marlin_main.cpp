@@ -997,9 +997,14 @@ void setup() {
   pref->density = DENSITY;
 
   pinMode(HG_TRG_PIN,OUTPUT);
-  digitalWrite(HG_TRG_PIN, LOW);
+  digitalWrite(HG_TRG_PIN, HIGH);
 
+  pinMode(ATC_EN_PIN,OUTPUT);
+  pinMode(ATC_STEP_PIN,OUTPUT);
+  pinMode(ATC_DIR_PIN,OUTPUT);
+  pinMode(ATC_MIN_PIN,INPUT);
   digitalWrite(ATC_EN_PIN, LOW);
+  digitalWrite(ATC_DIR_PIN, LOW);
 }
 
 /**
@@ -6997,9 +7002,21 @@ void tool_change(const uint8_t tmp_extruder, const float fr_mm_m/*=0.0*/, bool n
 #define ATC_ABS_POS(num) _ATC_ABS_POS(num)
 #define _ATC_ABS_POS(num) TOOL ## num ## _ABS_POS
 
+int current_atc_position = 0;
 void atc_pulse_run(){
+  if(code_seen('S')){
+    int a = code_value_int();
+    for(int i=0;i<a;i++){
+      digitalWrite(ATC_STEP_PIN,HIGH);
+      delayMicroseconds(10);
+      digitalWrite(ATC_STEP_PIN,LOW);
+      delayMicroseconds(500);
+    }
+    current_atc_position += a;
+    SERIAL_ECHOPGM("current_atc_position:");
+    SERIAL_ECHOLN(current_atc_position);
+  }
 
-  
 }
 
 void atc_homing(){
@@ -7014,7 +7031,7 @@ void atc_homing(){
 
 inline void gcode_T(uint8_t next_tool_number) {
   int diff = next_tool_number - current_tool_number;
-  int current_abs_pos, next;_pos;
+  int current_abs_pos, next_abs_pos;
   switch(current_tool_number){
     case 0:
      current_abs_pos = TOOL0_ABS_POS;
@@ -7760,6 +7777,10 @@ void process_next_command() {
         execute_heatgun();
         break;
 
+      case 731:
+        atc_pulse_run();
+        break;
+
       #if ENABLED(LIN_ADVANCE)
         case 905: // M905 Set advance factor.
           gcode_M905();
@@ -7858,9 +7879,9 @@ void get_extruded_height(){
 
 void execute_heatgun(){
     SERIAL_ECHOLNPGM("heatgun triggered"); 
-    digitalWrite(HG_TRG_PIN,HIGH);
-    delay(30);
     digitalWrite(HG_TRG_PIN,LOW);
+    delay(30);
+    digitalWrite(HG_TRG_PIN,HIGH);
     delay(30);
 }
 
