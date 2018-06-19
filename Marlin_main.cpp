@@ -1005,7 +1005,13 @@ void setup() {
   pinMode(ATC_MIN_PIN,INPUT);
   digitalWrite(ATC_EN_PIN, LOW);
   digitalWrite(ATC_DIR_PIN, LOW);
+
+  TCCR2A = 0b00000010;  //10:CTCモード
+  TCCR2B = 0b00000111;  //N=1024
+  TIMSK2 = 0b00000010;  //コンペアマッチAの割り込みを設定
+  OCR2A = 1;  
 }
+
 
 /**
  * The main Marlin program loop
@@ -3227,6 +3233,8 @@ inline void gcode_G28() {
   #endif
 
   report_current_position();
+
+  atc_homing();
 }
 
 #if HAS_PROBING_PROCEDURE
@@ -6992,105 +7000,96 @@ void tool_change(const uint8_t tmp_extruder, const float fr_mm_m/*=0.0*/, bool n
  * T0-T5: Switch tool, by rotating ATC tool wheel
  *
  */
-#define TOOL0_ABS_POS 100
-#define TOOL1_ABS_POS 200
-#define TOOL2_ABS_POS 400
-#define TOOL3_ABS_POS 500
-#define TOOL4_ABS_POS 600
-#define TOOL5_ABS_POS 700
+#define TOOL0_ABS_POS 20000   //Spindle
+#define TOOL1_ABS_POS 130000  //3D Print extruder
+#define TOOL2_ABS_POS 400000  //Chip mounter
+#define TOOL3_ABS_POS 555000  //Heat gun
+// #define TOOL4_ABS_POS 0
+// #define TOOL5_ABS_POS 0
 
 #define ATC_ABS_POS(num) _ATC_ABS_POS(num)
 #define _ATC_ABS_POS(num) TOOL ## num ## _ABS_POS
 
-int current_atc_position = 0;
-void atc_pulse_run(){
-  if(code_seen('S')){
-    int a = code_value_int();
-    for(int i=0;i<a;i++){
+long remaining_pulses;
+bool is_atc_homing = false;
+long current_atc_position = 0;
+
+ISR(TIMER2_COMPA_vect) 
+{
+  if(is_atc_homing){
+   if( READ(ATC_MIN_PIN)^ATC_MIN_ENDSTOP_INVERTING ){ //ENDSTOP HIT
+     current_atc_position = 0;
+     remaining_pulses = 0; 
+     is_atc_homing = false;
+   }
+  }
+  if(remaining_pulses>0){
+      digitalWrite(ATC_DIR_PIN,LOW);
+
       digitalWrite(ATC_STEP_PIN,HIGH);
       delayMicroseconds(10);
       digitalWrite(ATC_STEP_PIN,LOW);
-      delayMicroseconds(500);
-    }
-    current_atc_position += a;
-    SERIAL_ECHOPGM("current_atc_position:");
-    SERIAL_ECHOLN(current_atc_position);
-  }
+      delayMicroseconds(10);
 
+      remaining_pulses--;
+  }
+  if(remaining_pulses<0){
+      digitalWrite(ATC_DIR_PIN,HIGH);
+
+      digitalWrite(ATC_STEP_PIN,HIGH);
+      delayMicroseconds(10);
+      digitalWrite(ATC_STEP_PIN,LOW);
+      delayMicroseconds(10);
+
+      remaining_pulses++;
+  }
+}
+
+void atc_pulse_run(){
+  if(code_seen('S')){
+    long target_atc_position = code_value_long();
+    if(relative_mode){
+      remaining_pulses = target_atc_position;
+      current_atc_position = current_atc_position + target_atc_position;
+    }else{
+      remaining_pulses = target_atc_position - current_atc_position;
+      current_atc_position = target_atc_position;
+    }
+  }
+  if(code_seen('F')){
+    int b = code_value_int();
+    OCR2A = b;
+  }
 }
 
 void atc_homing(){
-  int abs_distance = ATC_ABS_POS(5)*2;
-  while(digitalRead(ATC_MIN_PIN)==HIGH){
-      digitalWrite(ATC_STEP_PIN,HIGH);
-      delay(1);
-      digitalWrite(ATC_STEP_PIN,LOW);
-      delay(1);
-  }
+  is_atc_homing = true;
+  remaining_pulses = -1000000;
 }
 
 inline void gcode_T(uint8_t next_tool_number) {
-  int diff = next_tool_number - current_tool_number;
-  int current_abs_pos, next_abs_pos;
-  switch(current_tool_number){
-    case 0:
-     current_abs_pos = TOOL0_ABS_POS;
-     break;
-    case 1:
-     current_abs_pos = TOOL1_ABS_POS;
-     break;
-    case 2:
-     current_abs_pos = TOOL2_ABS_POS;
-     break;
-    case 3:
-     current_abs_pos = TOOL3_ABS_POS;
-     break;
-    case 4:
-     current_abs_pos = TOOL4_ABS_POS;
-     break;
-    case 5:
-     current_abs_pos = TOOL5_ABS_POS;
-     break;
-  }
+  long target_atc_position;
   switch(next_tool_number){
     case 0:
-     next_abs_pos = TOOL0_ABS_POS;
+     target_atc_position = TOOL0_ABS_POS;
+     remaining_pulses = target_atc_position - current_atc_position;
+     current_atc_position = target_atc_position;
      break;
     case 1:
-     next_abs_pos = TOOL1_ABS_POS;
+     target_atc_position = TOOL1_ABS_POS;
+     remaining_pulses = target_atc_position - current_atc_position;
+     current_atc_position = target_atc_position;
      break;
     case 2:
-     next_abs_pos = TOOL2_ABS_POS;
+     target_atc_position = TOOL2_ABS_POS;
+     remaining_pulses = target_atc_position - current_atc_position;
+     current_atc_position = target_atc_position;
      break;
     case 3:
-     next_abs_pos = TOOL3_ABS_POS;
+     target_atc_position = TOOL3_ABS_POS;
+     remaining_pulses = target_atc_position - current_atc_position;
+     current_atc_position = target_atc_position;
      break;
-    case 4:
-     next_abs_pos = TOOL4_ABS_POS;
-     break;
-    case 5:
-     next_abs_pos = TOOL5_ABS_POS;
-     break;
-  }
-  int abs_distance = next_abs_pos - current_abs_pos;
-  if(diff>0){
-    //CW
-    digitalWrite(ATC_DIR_PIN,HIGH);
-    for(int i=0;i<abs_distance;i++){
-      digitalWrite(ATC_STEP_PIN,HIGH);
-      delay(1);
-      digitalWrite(ATC_STEP_PIN,LOW);
-      delay(1);
-    }
-  } else if (diff<0){
-    //CCW
-    digitalWrite(ATC_DIR_PIN,LOW);
-    for(int i=0;i<abs_distance;i++){
-      digitalWrite(ATC_STEP_PIN,HIGH);
-      delay(1);
-      digitalWrite(ATC_STEP_PIN,LOW);
-      delay(1);
-    }
   }
 
   // #if ENABLED(DEBUG_LEVELING_FEATURE)
@@ -7779,6 +7778,10 @@ void process_next_command() {
 
       case 731:
         atc_pulse_run();
+        break;
+
+      case 732:
+        atc_homing();
         break;
 
       #if ENABLED(LIN_ADVANCE)

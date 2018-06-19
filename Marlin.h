@@ -404,5 +404,6 @@ inline void do_blocking_move_to_xy(float x, float y, float fr_mm_m=0.0);
 
 void execute_heatgun();
 void atc_pulse_run();
+void atc_homing();
 
 #endif //MARLIN_H
