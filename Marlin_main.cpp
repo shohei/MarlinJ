@@ -7602,6 +7602,14 @@ void process_next_command() {
         gcode_M226();
         break;
 
+      case 260: 
+        gcode_M155(); //I2C Write
+        break;
+
+      case 261: 
+        gcode_M156(); //I2C Read
+        break;
+
       #if HAS_SERVOS
         case 280: // M280 - set servo position absolute. P: servo index, S: angle or microseconds
           gcode_M280();
