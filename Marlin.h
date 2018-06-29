@@ -406,4 +406,9 @@ void execute_heatgun();
 void atc_pulse_run();
 void atc_homing();
 
+#if ENABLED(EXPERIMENTAL_I2CBUS)
+inline void gcode_M155();
+inline void gcode_M156();
+#endif
+
 #endif //MARLIN_H

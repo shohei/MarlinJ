@@ -803,6 +803,6 @@ const unsigned int dropsegments = 5; //everything with less than this number of 
 
 // @section i2cbus
 
-//#define EXPERIMENTAL_I2CBUS
+#define EXPERIMENTAL_I2CBUS
 
 #endif // CONFIGURATION_ADV_H
