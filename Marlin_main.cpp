@@ -557,6 +557,9 @@ static bool send_ok[BUFSIZE];
 #endif // HOST_KEEPALIVE_FEATURE
 
 uint8_t current_tool_number;
+long remaining_pulses;
+bool is_atc_homing = false;
+long current_atc_position = 0;
 
 /**
  * ***************************************************************************
@@ -3237,6 +3240,9 @@ inline void gcode_G28() {
   report_current_position();
 
   atc_homing();
+  while (remaining_pulses!=0) { 
+    idle();
+  } 
 }
 
 #if HAS_PROBING_PROCEDURE
@@ -7003,9 +7009,6 @@ void tool_change(const uint8_t tmp_extruder, const float fr_mm_m/*=0.0*/, bool n
  *
  */
 
-long remaining_pulses;
-bool is_atc_homing = false;
-long current_atc_position = 0;
 
 ISR(TIMER2_COMPA_vect) 
 {
@@ -7084,6 +7087,10 @@ inline void gcode_T(uint8_t next_tool_number) {
      current_atc_position = target_atc_position;
      break;
   }
+
+  while (remaining_pulses!=0) { 
+    idle();
+  } 
 
   // #if ENABLED(DEBUG_LEVELING_FEATURE)
   //   if (DEBUGGING(LEVELING)) {
