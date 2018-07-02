@@ -1010,6 +1010,8 @@ void setup() {
   TCCR2B = 0b00000111;  //N=1024
   TIMSK2 = 0b00000010;  //コンペアマッチAの割り込みを設定
   OCR2A = 1;  
+
+  analogReference(EXTERNAL);
 }
 
 
