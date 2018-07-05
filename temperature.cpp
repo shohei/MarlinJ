@@ -1611,7 +1611,8 @@ void Temperature::isr() {
 
   #endif // SLOW_PWM_HEATERS
 
-  #define SET_ADMUX_ADCSRA(pin) ADMUX = _BV(REFS0) | (pin & 0x07); SBI(ADCSRA, ADSC)
+  // #define SET_ADMUX_ADCSRA(pin) ADMUX = _BV(REFS0) | (pin & 0x07); SBI(ADCSRA, ADSC)
+  #define SET_ADMUX_ADCSRA(pin) ADMUX = (0 << REFS0) | (pin & 0x07); SBI(ADCSRA, ADSC)
   #ifdef MUX5
     #define START_ADC(pin) if (pin > 7) ADCSRB = _BV(MUX5); else ADCSRB = 0; SET_ADMUX_ADCSRA(pin)
   #else

@@ -1014,7 +1014,6 @@ void setup() {
   TIMSK2 = 0b00000010;  //コンペアマッチAの割り込みを設定
   OCR2A = 1;  
 
-  analogReference(EXTERNAL);
 }
 
 
