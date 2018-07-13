@@ -317,9 +317,13 @@
   #define K1 0.95 //smoothing factor within the PID
 
   // Kossel Pro
-  #define  DEFAULT_Kp 19.30
-  #define  DEFAULT_Ki 3.51
-  #define  DEFAULT_Kd 26.56
+  // #define  DEFAULT_Kp 19.30
+  // #define  DEFAULT_Ki 3.51
+  // #define  DEFAULT_Kd 26.56
+#define  DEFAULT_Kp 18.47
+#define  DEFAULT_Ki 0.93
+#define  DEFAULT_Kd 92.16
+
 
 #endif // PIDTEMP
 

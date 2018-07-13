@@ -4511,6 +4511,7 @@ inline void gcode_M104() {
 
   void print_heaterstates() {
     #if HAS_TEMP_HOTEND
+
       SERIAL_PROTOCOLPGM(" T:");
       SERIAL_PROTOCOL_F(thermalManager.degHotend(target_extruder), 1);
       SERIAL_PROTOCOLPGM(" /");
