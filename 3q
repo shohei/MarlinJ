@@ -1,0 +1,59 @@
+update PID parameter using M303
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# On branch fabricator-jst-fair-2018
+# Changes to be committed:
+#	modified:   Configuration.h
+#	modified:   Configuration_adv.h
+#	modified:   Marlin_main.cpp
+#
+# ------------------------ >8 ------------------------
+# Do not modify or remove the line above.
+# Everything below it will be ignored.
+diff --git a/Configuration.h b/Configuration.h
+index e1793be..2db6230 100644
+--- a/Configuration.h
++++ b/Configuration.h
+@@ -317,9 +317,13 @@
+   #define K1 0.95 //smoothing factor within the PID
+ 
+   // Kossel Pro
+-  #define  DEFAULT_Kp 19.30
+-  #define  DEFAULT_Ki 3.51
+-  #define  DEFAULT_Kd 26.56
++  // #define  DEFAULT_Kp 19.30
++  // #define  DEFAULT_Ki 3.51
++  // #define  DEFAULT_Kd 26.56
++#define  DEFAULT_Kp 18.47
++#define  DEFAULT_Ki 0.93
++#define  DEFAULT_Kd 92.16
++
+ 
+ #endif // PIDTEMP
+ 
+diff --git a/Configuration_adv.h b/Configuration_adv.h
+index 8f97a3f..9a06d85 100644
+--- a/Configuration_adv.h
++++ b/Configuration_adv.h
+@@ -142,7 +142,7 @@
+ 
+ //Show Temperature ADC value
+ //The M105 command return, besides traditional information, the ADC value read from temperature sensors.
+-//#define SHOW_TEMP_ADC_VALUES
++#define SHOW_TEMP_ADC_VALUES
+ 
+ /**
+  * High Temperature Thermistor Support
+diff --git a/Marlin_main.cpp b/Marlin_main.cpp
+index 6ceadab..68fc310 100644
+--- a/Marlin_main.cpp
++++ b/Marlin_main.cpp
+@@ -4511,6 +4511,7 @@ inline void gcode_M104() {
+ 
+   void print_heaterstates() {
+     #if HAS_TEMP_HOTEND
++
+       SERIAL_PROTOCOLPGM(" T:");
+       SERIAL_PROTOCOL_F(thermalManager.degHotend(target_extruder), 1);
+       SERIAL_PROTOCOLPGM(" /");
