@@ -559,6 +559,7 @@ static bool send_ok[BUFSIZE];
 uint8_t current_tool_number;
 long remaining_pulses;
 bool is_atc_homing = false;
+bool is_homing_done = false;
 long current_atc_position = 0;
 
 /**
@@ -3242,6 +3243,8 @@ inline void gcode_G28() {
   while (remaining_pulses!=0) { 
     idle();
   } 
+
+  is_homing_done = true;
 }
 
 #if HAS_PROBING_PROCEDURE
@@ -7064,33 +7067,35 @@ void atc_homing(){
 }
 
 inline void gcode_T(uint8_t next_tool_number) {
-  long target_atc_position;
-  switch(next_tool_number){
-    case 0:
-     target_atc_position = TOOL0_ABS_POS;
-     remaining_pulses = target_atc_position - current_atc_position;
-     current_atc_position = target_atc_position;
-     break;
-    case 1:
-     target_atc_position = TOOL1_ABS_POS;
-     remaining_pulses = target_atc_position - current_atc_position;
-     current_atc_position = target_atc_position;
-     break;
-    case 2:
-     target_atc_position = TOOL2_ABS_POS;
-     remaining_pulses = target_atc_position - current_atc_position;
-     current_atc_position = target_atc_position;
-     break;
-    case 3:
-     target_atc_position = TOOL3_ABS_POS;
-     remaining_pulses = target_atc_position - current_atc_position;
-     current_atc_position = target_atc_position;
-     break;
-  }
+  if(is_homing_done){
 
-  while (remaining_pulses!=0) { 
-    idle();
-  } 
+    long target_atc_position;
+    switch(next_tool_number){
+      case 0:
+      target_atc_position = TOOL0_ABS_POS;
+      remaining_pulses = target_atc_position - current_atc_position;
+      current_atc_position = target_atc_position;
+      break;
+      case 1:
+      target_atc_position = TOOL1_ABS_POS;
+      remaining_pulses = target_atc_position - current_atc_position;
+      current_atc_position = target_atc_position;
+      break;
+      case 2:
+      target_atc_position = TOOL2_ABS_POS;
+      remaining_pulses = target_atc_position - current_atc_position;
+      current_atc_position = target_atc_position;
+      break;
+      case 3:
+      target_atc_position = TOOL3_ABS_POS;
+      remaining_pulses = target_atc_position - current_atc_position;
+      current_atc_position = target_atc_position;
+      break;
+    }
+
+    while (remaining_pulses!=0) { 
+      idle();
+    } 
 
   // #if ENABLED(DEBUG_LEVELING_FEATURE)
   //   if (DEBUGGING(LEVELING)) {
@@ -7120,6 +7125,7 @@ inline void gcode_T(uint8_t next_tool_number) {
   //     SERIAL_ECHOLNPGM("<<< gcode_T");
   //   }
   // #endif
+  }
 }
 
 /**
