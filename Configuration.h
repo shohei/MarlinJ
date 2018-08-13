@@ -1472,10 +1472,11 @@
 
  /* ATC definition */ 
 #define TOOL0_ABS_POS 20000   //Spindle
-#define TOOL1_ABS_POS 130000  //3D Print extruder
-#define TOOL2_ABS_POS 400000  //Chip mounter
-#define TOOL3_ABS_POS 555000  //Heat gun
-// #define TOOL4_ABS_POS 0
-// #define TOOL5_ABS_POS 0
+#define TOOL1_ABS_POS 146000  //3D Print extruder
+#define TOOL2_ABS_POS 310000  //Range sensor
+#define TOOL3_ABS_POS 394000  //Chip mounter head
+#define TOOL4_ABS_POS 440000  //Dispenser
+#define TOOL5_ABS_POS 350000  //Chip mounter nozzle
+#define TOOL6_ABS_POS 570000  //Heat gun
 
 #endif // CONFIGURATION_H
