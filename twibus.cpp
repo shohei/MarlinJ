@@ -65,7 +65,9 @@ void TWIBus::send() {
 
   Wire.beginTransmission(this->addr);
   Wire.write(this->buffer, this->buffer_s);
-  Wire.endTransmission();
+  int a = Wire.endTransmission();
+  SERIAL_ECHOPGM("result: ");
+  SERIAL_ECHOLN(a);
 
     // Reset the buffer after sending the data
   this->reset();
