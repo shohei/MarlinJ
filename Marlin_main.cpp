@@ -1015,10 +1015,8 @@ void setup() {
   TIMSK2 = 0b00000010;  //コンペアマッチAの割り込みを設定
   OCR2A = 1;  
 
-  pinMode(13,OUTPUT);
-  digitalWrite(13,LOW); //Make D13 as LOW to avoid conflict with FPGA
+  pinMode(13,INPUT); //Make D13 as LOW to avoid conflict with FPGA
 }
-
 
 /**
  * The main Marlin program loop
