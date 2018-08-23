@@ -864,7 +864,7 @@ void servo_init() {
  *    • status LEDs
  */
 void setup() {
-
+  
   #ifdef DISABLE_JTAG
     // Disable JTAG on AT90USB chips to free up pins for IO
     MCUCR = 0x80;
@@ -1015,6 +1015,8 @@ void setup() {
   TIMSK2 = 0b00000010;  //コンペアマッチAの割り込みを設定
   OCR2A = 1;  
 
+  pinMode(13,OUTPUT);
+  digitalWrite(13,LOW); //Make D13 as LOW to avoid conflict with FPGA
 }
 
 
