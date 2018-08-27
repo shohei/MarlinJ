@@ -562,6 +562,8 @@ bool is_atc_homing = false;
 bool is_homing_done = false;
 long current_atc_position = 0;
 
+int unused_pins[] = {12,49,48,45,47,46,43,44,19,36,41,37,35,31,A8,24,A9,23,6,3,8,39,A10,15,26,28,27,10,11,9,2,5,7,17,16,13,4,A14,22};
+
 /**
  * ***************************************************************************
  * ******************************** FUNCTIONS ********************************
@@ -1015,7 +1017,10 @@ void setup() {
   TIMSK2 = 0b00000010;  //コンペアマッチAの割り込みを設定
   OCR2A = 1;  
 
-  pinMode(13,INPUT); //Make D13 as LOW to avoid conflict with FPGA
+  for(int i=0;i<sizeof(unused_pins)/sizeof(int);i++){
+    pinMode(unused_pins[i],INPUT); //Make as LOW to avoid conflict with FPGA
+  }
+
 }
 
 /**
