@@ -7107,7 +7107,7 @@ inline void gcode_T(uint8_t next_tool_number) {
       current_atc_position = target_atc_position;
       break;
       case 6:
-      target_atc_position = TOOL5_ABS_POS;
+      target_atc_position = TOOL6_ABS_POS;
       remaining_pulses = target_atc_position - current_atc_position;
       current_atc_position = target_atc_position;
       break;
