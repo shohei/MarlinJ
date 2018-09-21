@@ -7078,40 +7078,29 @@ inline void gcode_T(uint8_t next_tool_number) {
     switch(next_tool_number){
       case 0:
       target_atc_position = TOOL0_ABS_POS;
-      remaining_pulses = target_atc_position - current_atc_position;
-      current_atc_position = target_atc_position;
       break;
       case 1:
       target_atc_position = TOOL1_ABS_POS;
-      remaining_pulses = target_atc_position - current_atc_position;
-      current_atc_position = target_atc_position;
       break;
       case 2:
       target_atc_position = TOOL2_ABS_POS;
-      remaining_pulses = target_atc_position - current_atc_position;
-      current_atc_position = target_atc_position;
       break;
       case 3:
       target_atc_position = TOOL3_ABS_POS;
-      remaining_pulses = target_atc_position - current_atc_position;
-      current_atc_position = target_atc_position;
       break;
       case 4:
       target_atc_position = TOOL4_ABS_POS;
-      remaining_pulses = target_atc_position - current_atc_position;
-      current_atc_position = target_atc_position;
       break;
       case 5:
       target_atc_position = TOOL5_ABS_POS;
-      remaining_pulses = target_atc_position - current_atc_position;
-      current_atc_position = target_atc_position;
       break;
       case 6:
       target_atc_position = TOOL6_ABS_POS;
-      remaining_pulses = target_atc_position - current_atc_position;
-      current_atc_position = target_atc_position;
       break;
     }
+
+    remaining_pulses = target_atc_position - current_atc_position;
+    current_atc_position = target_atc_position;
 
     while (remaining_pulses!=0) { 
       idle();
